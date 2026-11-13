@@ -8,16 +8,13 @@ _G.cfg = {
     AimBind = false, JumpBind = false, PunchBind = false, EspBind = false, BrightBind = false
 }
 
--- Загружаем UI
-local uiCode = game:HttpGet("https://raw.githubusercontent.com/dolmotinecc300-lang/script2/refs/heads/main/ui.lua")
+local uiCode = game:HttpGet("https://raw.githubusercontent.com/dolmotinecc300-lang/script2/refs/heads/main/scripts/ui.lua")
 loadstring(uiCode)()
 
--- Ждем, пока UI создастся, и грузим движок
 task.wait(0.5)
-local engineCode = game:HttpGet("https://raw.githubusercontent.com/dolmotinecc300-lang/script2/refs/heads/main/engine.lua")
+local engineCode = game:HttpGet("https://raw.githubusercontent.com/dolmotinecc300-lang/script2/refs/heads/main/scripts/engine.lua")
 loadstring(engineCode)()
 
--- Грузим бинды
 task.wait(0.2)
-local bindsCode = game:HttpGet("https://raw.githubusercontent.com/dolmotinecc300-lang/script2/refs/heads/main/binds.lua")
+local bindsCode = game:HttpGet("https://raw.githubusercontent.com/dolmotinecc300-lang/script2/refs/heads/main/scripts/binds.lua")
 loadstring(bindsCode)()
