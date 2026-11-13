@@ -13,10 +13,13 @@ local cfg = {
     TargetPolice = false, 
     TargetCriminals = false, 
     TargetInmates = false,
-    TargetWanted = false, -- Новая цель: только злые зэки
-    Speed = 16 
+    Speed = 16,
+    InfJump = false,
+    JumpBind = false
 }
-local bg, btn, act = Color3.fromRGB(20,45,70), Color3.fromRGB(30,60,90), Color3.fromRGB(50,100,140)
+local bg = Color3.fromRGB(20,45,70)
+local btn = Color3.fromRGB(45,85,115) -- Приятный бирюзовый
+local act = Color3.fromRGB(80,150,190) -- Активный цвет
 
 local pg = LocalPlayer:WaitForChild("PlayerGui")
 if pg:FindFirstChild("AimGui") then pg.AimGui:Destroy() end
@@ -99,9 +102,7 @@ local function mkNav(txt, x, pName)
     b.Text = txt
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
     b.MouseButton1Click:Connect(function()
-        for _, navBtn in pairs(navs) do
-            navBtn.BackgroundColor3 = btn
-        end
+        for _, navBtn in pairs(navs) do navBtn.BackgroundColor3 = btn end
         b.BackgroundColor3 = act
         switch(pName)
     end)
@@ -172,7 +173,7 @@ tgtB.Text = "Targets"
 Instance.new("UICorner", tgtB).CornerRadius = UDim.new(0, 6)
 
 local drop = Instance.new("Frame", pages.Aim)
-drop.Size = UDim2.new(0, 175, 0, 130) -- Увеличил высоту для 4 пунктов
+drop.Size = UDim2.new(0, 175, 0, 100)
 drop.Position = UDim2.new(0, 195, 0, 146)
 drop.BackgroundColor3 = bg
 drop.Visible = false
@@ -180,12 +181,11 @@ Instance.new("UICorner", drop).CornerRadius = UDim.new(0, 6)
 
 local function updateTargetText()
     local txt = "Targets"
-    if cfg.TargetPolice or cfg.TargetCriminals or cfg.TargetInmates or cfg.TargetWanted then
+    if cfg.TargetPolice or cfg.TargetCriminals or cfg.TargetInmates then
         txt = "Targets: "
         if cfg.TargetPolice then txt = txt .. "P " end
         if cfg.TargetCriminals then txt = txt .. "C " end
-        if cfg.TargetInmates then txt = txt .. "I " end
-        if cfg.TargetWanted then txt = txt .. "W" end
+        if cfg.TargetInmates then txt = txt .. "I" end
     end
     tgtB.Text = txt
 end
@@ -210,7 +210,6 @@ end
 mkTargetOpt("Police", "TargetPolice", 0)
 mkTargetOpt("Criminals", "TargetCriminals", 30)
 mkTargetOpt("Inmates", "TargetInmates", 60)
-mkTargetOpt("Wanted Inmates", "TargetWanted", 90) -- Новый пункт
 
 tgtB.MouseButton1Click:Connect(function() drop.Visible = not drop.Visible end)
 
@@ -250,9 +249,31 @@ bindB.TextSize = 13
 bindB.Text = "Aim Bind: OFF"
 Instance.new("UICorner", bindB).CornerRadius = UDim.new(0, 6)
 
+-- Бесконечный прыжок и его бинд
+local infJumpBtn = Instance.new("TextButton", pages.Settings)
+infJumpBtn.Size = UDim2.new(0, 175, 0, 32)
+infJumpBtn.Position = UDim2.new(0, 10, 0, 90)
+infJumpBtn.BackgroundColor3 = btn
+infJumpBtn.TextColor3 = Color3.new(1,1,1)
+infJumpBtn.Font = Enum.Font.Gotham
+infJumpBtn.TextSize = 13
+infJumpBtn.Text = "Inf Jump: OFF"
+Instance.new("UICorner", infJumpBtn).CornerRadius = UDim.new(0, 6)
+infJumpBtn.MouseButton1Click:Connect(function() cfg.InfJump = not cfg.InfJump; infJumpBtn.Text = "Inf Jump: " .. (cfg.InfJump and "ON" or "OFF") end)
+
+local jumpBindBtn = Instance.new("TextButton", pages.Settings)
+jumpBindBtn.Size = UDim2.new(0, 175, 0, 32)
+jumpBindBtn.Position = UDim2.new(0, 10, 0, 130)
+jumpBindBtn.BackgroundColor3 = btn
+jumpBindBtn.TextColor3 = Color3.new(1,1,1)
+jumpBindBtn.Font = Enum.Font.Gotham
+jumpBindBtn.TextSize = 13
+jumpBindBtn.Text = "Jump Bind: OFF"
+Instance.new("UICorner", jumpBindBtn).CornerRadius = UDim.new(0, 6)
+
 local spdTxt = Instance.new("TextLabel", pages.Settings)
 spdTxt.Size = UDim2.new(0, 175, 0, 20)
-spdTxt.Position = UDim2.new(0, 10, 0, 95)
+spdTxt.Position = UDim2.new(0, 10, 0, 175)
 spdTxt.BackgroundTransparency = 1
 spdTxt.Text = "Speed (16-30):"
 spdTxt.TextColor3 = Color3.new(1,1,1)
@@ -262,7 +283,7 @@ spdTxt.TextXAlignment = Enum.TextXAlignment.Left
 
 local spdInp = Instance.new("TextBox", pages.Settings)
 spdInp.Size = UDim2.new(0, 80, 0, 30)
-spdInp.Position = UDim2.new(0, 195, 0, 90)
+spdInp.Position = UDim2.new(0, 195, 0, 170)
 spdInp.BackgroundColor3 = btn
 spdInp.TextColor3 = Color3.new(1,1,1)
 spdInp.Font = Enum.Font.Gotham
@@ -282,6 +303,16 @@ spdInp.FocusLost:Connect(function() applySpd(spdInp.Text) end)
 LocalPlayer.CharacterAdded:Connect(function(c) task.wait(1); local h = c:FindFirstChild("Humanoid"); if h then h.WalkSpeed = cfg.Speed end end)
 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = cfg.Speed end
 
+-- Обработка прыжка
+UserInputService.JumpRequest:Connect(function()
+    if cfg.InfJump and cfg.JumpBind then
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
 local fBind = Instance.new("TextButton", gui)
 fBind.Size = UDim2.new(0, 90, 0, 45)
 fBind.Position = UDim2.new(0.5, 60, 0.85, 0)
@@ -293,11 +324,32 @@ fBind.Text = "AIM OFF"
 fBind.Visible = false
 Instance.new("UICorner", fBind).CornerRadius = UDim.new(0, 10)
 
+local jBind = Instance.new("TextButton", gui)
+jBind.Size = UDim2.new(0, 90, 0, 45)
+jBind.Position = UDim2.new(0.5, -150, 0.85, 0)
+jBind.BackgroundColor3 = Color3.fromRGB(40,40,200)
+jBind.TextColor3 = Color3.new(1,1,1)
+jBind.Font = Enum.Font.GothamBold
+jBind.TextSize = 16
+jBind.Text = "JUMP"
+jBind.Visible = false
+Instance.new("UICorner", jBind).CornerRadius = UDim.new(0, 10)
+
 bindB.MouseButton1Click:Connect(function() cfg.Bind = not cfg.Bind; bindB.Text = "Aim Bind: " .. (cfg.Bind and "ON" or "OFF"); fBind.Visible = cfg.Bind end)
 fBind.MouseButton1Click:Connect(function()
     cfg.Aim = not cfg.Aim
     fBind.Text = cfg.Aim and "AIM ON" or "AIM OFF"
     fBind.BackgroundColor3 = cfg.Aim and Color3.fromRGB(40,200,40) or Color3.fromRGB(200,40,40)
+end)
+
+jumpBindBtn.MouseButton1Click:Connect(function() cfg.JumpBind = not cfg.JumpBind; jumpBindBtn.Text = "Jump Bind: " .. (cfg.JumpBind and "ON" or "OFF"); jBind.Visible = cfg.JumpBind end)
+jBind.MouseButton1Click:Connect(function()
+    if cfg.InfJump then
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
 end)
 
 local function mkDrag(f, t)
@@ -306,7 +358,7 @@ local function mkDrag(f, t)
     f.InputChanged:Connect(function(i) if d and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then local df = i.Position - s; t.Position = UDim2.new(p.X.Scale, p.X.Offset + df.X, p.Y.Scale, p.Y.Offset + df.Y) end end)
     f.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then d = false end end)
 end
-mkDrag(title, menu); mkDrag(fBind, fBind); mkDrag(open, open)
+mkDrag(title, menu); mkDrag(fBind, fBind); mkDrag(jBind, jBind); mkDrag(open, open)
 
 local pal = {Color3.fromRGB(0,200,255), Color3.fromRGB(0,100,255), Color3.fromRGB(0,50,150), Color3.fromRGB(0,150,255), Color3.fromRGB(20,80,200)}
 local ci, ct = 1, 0
@@ -357,30 +409,6 @@ local function isVis(part)
     return workspace:Raycast(Camera.CFrame.Position, part.Position - Camera.CFrame.Position, rp) == nil
 end
 
--- Функция проверки на "злого" заключённого (поиск значка над головой)
-local function isWantedInmate(p)
-    local char = p.Character
-    if not char then return false end
-    -- Проверяем Head и PlayerGui на наличие объектов с типичными названиями значков
-    local searchRoots = {char:FindFirstChild("Head"), p:FindFirstChild("PlayerGui")}
-    for _, root in pairs(searchRoots) do
-        if root then
-            for _, obj in ipairs(root:GetDescendants()) do
-                if obj:IsA("BillboardGui") or obj:IsA("TextLabel") or obj:IsA("ImageLabel") then
-                    local n = string.lower(obj.Name)
-                    local txt = ""
-                    if obj:IsA("TextLabel") then txt = string.lower(obj.Text) end
-                    -- Ищем в названии или тексте слова-маркеры
-                    if n:find("wanted") or n:find("star") or n:find("criminal") or n:find("violation") or txt:find("wanted") or txt:find("star") then
-                        return true
-                    end
-                end
-            end
-        end
-    end
-    return false
-end
-
 RunService.RenderStepped:Connect(function()
     if cfg.Aim and cfg.Bind then
         local b, bd = nil, cfg.Fov
@@ -395,19 +423,9 @@ RunService.RenderStepped:Connect(function()
                     if vh then
                         local n = (p.Team and p.Team.Name:lower()) or ""
                         local vm = false
-                        
-                        -- Логика выбора цели
-                        if cfg.TargetWanted then
-                            -- Если включен режим "только злые", проверяем, что это заключенный и у него есть значок
-                            if (n:find("inmate") or n:find("prison")) and isWantedInmate(p) then
-                                vm = true
-                            end
-                        else
-                            -- Обычная логика по командам
-                            if cfg.TargetPolice and (n:find("guard") or n:find("cop") or n:find("police")) then vm = true end
-                            if cfg.TargetCriminals and (n:find("criminal") or n:find("prisoner")) then vm = true end
-                            if cfg.TargetInmates and (n:find("inmate") or n:find("prison")) then vm = true end
-                        end
+                        if cfg.TargetPolice and (n:find("guard") or n:find("cop") or n:find("police")) then vm = true end
+                        if cfg.TargetCriminals and (n:find("criminal") or n:find("prisoner")) then vm = true end
+                        if cfg.TargetInmates and (n:find("inmate") or n:find("prison")) then vm = true end
                         
                         if vm then
                             local sp, on = Camera:WorldToViewportPoint(h.Position)
