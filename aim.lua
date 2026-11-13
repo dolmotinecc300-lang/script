@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
@@ -58,7 +57,6 @@ mstroke.Color = config.FOVColor
 mstroke.Thickness = 2
 mstroke.Parent = menu
 
--- Заголовок меню (за него таскаем)
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -40, 0, 30)
 title.BackgroundTransparency = 1
@@ -68,7 +66,6 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 16
 title.Parent = menu
 
--- Кнопка закрытия (Крестик)
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
 closeBtn.Position = UDim2.new(1, -35, 0, 0)
@@ -80,7 +77,6 @@ closeBtn.TextSize = 18
 closeBtn.ZIndex = 5
 closeBtn.Parent = menu
 
--- Круглая кнопка открытия (А)
 local openBtn = Instance.new("TextButton")
 openBtn.Size = UDim2.new(0, 45, 0, 45)
 openBtn.Position = UDim2.new(0, 20, 0, 60)
@@ -146,7 +142,6 @@ local bbc = Instance.new("UICorner")
 bbc.CornerRadius = UDim.new(0, 6)
 bbc.Parent = bindBtn
 
--- Плавающая кнопка бинда
 local floatBind = Instance.new("TextButton")
 floatBind.Size = UDim2.new(0, 90, 0, 45)
 floatBind.Position = UDim2.new(0.5, 60, 0.85, 0)
@@ -185,7 +180,6 @@ floatBind.MouseButton1Click:Connect(function()
     floatBind.BackgroundColor3 = config.AimEnabled and Color3.fromRGB(40, 200, 40) or Color3.fromRGB(200, 40, 40)
 end)
 
--- Цвет и радиус
 local colorBtn = Instance.new("TextButton")
 colorBtn.Size = UDim2.new(1, -20, 0, 34)
 colorBtn.Position = UDim2.new(0, 10, 0, 200)
@@ -235,32 +229,22 @@ radiusSlider.MouseButton1Click:Connect(function()
     radiusSlider.Text = "FOV Radius: " .. config.FOVRadius
 end)
 
--- Функция перетаскивания (с блокировкой экрана)
 local function makeDraggable(frame, target)
     local dragging = false
     local dragInput, dragStart, startPos
-    
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
             startPos = target.Position
-            -- Блокируем движение камеры, пока таскаем
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
         end
     end)
-    
     frame.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
             local delta = input.Position - dragStart
             target.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
-    
     frame.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
@@ -268,16 +252,11 @@ local function makeDraggable(frame, target)
     end)
 end
 
--- Таскаем только за заголовок и за сами кнопки
 makeDraggable(title, menu)
 makeDraggable(floatBind, floatBind)
 makeDraggable(openBtn, openBtn)
 
--- ESP Логика
-local espFolder = Instance.new("Folder")
-espFolder.Name = "ESP"
-espFolder.Parent = gui
-
+-- ESP Логика (Chams)
 local espCache = {}
 
 local function getTeamColor(player)
@@ -302,42 +281,45 @@ local function getTeamColor(player)
     return Color3.new(1, 1, 1)
 end
 
-local function createESP(player)
-    if player == LocalPlayer then return end
-    local box = Instance.new("Frame")
-    box.Name = player.Name
-    box.BackgroundTransparency = 1
-    box.BorderSizePixel = 0
-    box.Parent = espFolder
+local function applyChams(player)
+    local char = player.Character
+    if not char or player == LocalPlayer then return end
     
-    local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 2
-    stroke.Parent = box
+    local oldHighlight = char:FindFirstChild("ESP_Highlight")
+    if oldHighlight then oldHighlight:Destroy() end
     
-    local nameTag = Instance.new("TextLabel")
-    nameTag.Size = UDim2.new(1, 0, 0, 15)
-    nameTag.Position = UDim2.new(0, 0, -1, -5)
-    nameTag.BackgroundTransparency = 1
-    nameTag.Text = player.Name
-    nameTag.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameTag.TextStrokeTransparency = 0
-    nameTag.Font = Enum.Font.GothamBold
-    nameTag.TextSize = 12
-    nameTag.Parent = box
-    
-    espCache[player] = {box = box, stroke = stroke}
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESP_Highlight"
+    highlight.FillColor = getTeamColor(player)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.3
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Enabled = config.ESPEnabled
+    highlight.Parent = char
 end
 
-local function removeESP(player)
-    if espCache[player] then
-        espCache[player].box:Destroy()
-        espCache[player] = nil
+local function removeChams(player)
+    if player.Character then
+        local h = player.Character:FindFirstChild("ESP_Highlight")
+        if h then h:Destroy() end
     end
 end
 
-Players.PlayerAdded:Connect(createESP)
-Players.PlayerRemoving:Connect(removeESP)
-for _, p in ipairs(Players:GetPlayers()) do createESP(p) end
+local function setupPlayer(player)
+    if player == LocalPlayer then return end
+    player.CharacterAdded:Connect(function()
+        task.wait(1)
+        applyChams(player)
+    end)
+    if player.Character then
+        applyChams(player)
+    end
+end
+
+Players.PlayerAdded:Connect(setupPlayer)
+Players.PlayerRemoving:Connect(removeChams)
+for _, p in ipairs(Players:GetPlayers()) do setupPlayer(p) end
 
 -- Основной цикл
 RunService.RenderStepped:Connect(function()
@@ -350,7 +332,7 @@ RunService.RenderStepped:Connect(function()
                 local hrp = p.Character:FindFirstChild("HumanoidRootPart")
                 local hum = p.Character:FindFirstChild("Humanoid")
                 if hrp and hum and hum.Health > 0 then
-                    local screen, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                    local screen, onScreen = Camera.WorldToViewportPoint(hrp.Position)
                     if onScreen then
                         local dist = (Vector2.new(screen.X, screen.Y) - center).Magnitude
                         if dist < bestDist then
@@ -366,32 +348,16 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- ESP Отрисовка
-    for player, data in pairs(espCache) do
-        local box = data.box
-        local char = player.Character
-        if config.ESPEnabled and char then
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            local head = char:FindFirstChild("Head")
-            local hum = char:FindFirstChild("Humanoid")
-            if hrp and head and hum and hum.Health > 0 then
-                local headPos, onScreen = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
-                local feetPos = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
-                if onScreen and headPos.Z > 0 then
-                    local height = math.abs(headPos.Y - feetPos.Y)
-                    local width = height / 2
-                    box.Size = UDim2.new(0, width, 0, height)
-                    box.Position = UDim2.new(0, headPos.X - width/2, 0, headPos.Y)
-                    box.Visible = true
-                    data.stroke.Color = getTeamColor(player)
-                else
-                    box.Visible = false
+    -- Управление хайлайтами
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local highlight = player.Character:FindFirstChild("ESP_Highlight")
+            if highlight then
+                highlight.Enabled = config.ESPEnabled
+                if config.ESPEnabled then
+                    highlight.FillColor = getTeamColor(player)
                 end
-            else
-                box.Visible = false
             end
-        else
-            box.Visible = false
         end
     end
 end)
