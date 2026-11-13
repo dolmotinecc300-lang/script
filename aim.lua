@@ -364,7 +364,7 @@ switch("Aim")
 
 -- ЗАГРУЗКА ДВИЖКА
 task.wait(0.2)
-local engineUrl = "ССЫЛКА_НА_RAW_ФАЙЛ_ENGINE.LUA"
+local engineUrl = "https://raw.githubusercontent.com/dolmotinecc300-lang/script2/refs/heads/main/engine.lua"
 local success, code = pcall(function() return game:HttpGet(engineUrl) end)
 if success and code then
     local func = loadstring(code)
