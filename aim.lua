@@ -3,54 +3,29 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+local cfg = { Aim = false, Fov = 150, Bind = false, Esp = false, Kill = true, Target = "All", Speed = 16 }
+local modes = {"All", "Police", "Criminals", "Inmates"}
+local bg, btn, act = Color3.fromRGB(20,45,70), Color3.fromRGB(30,60,90), Color3.fromRGB(50,100,140)
 
-local config = {
-    AimEnabled = false,
-    FOVRadius = 150,
-    AimBind = false,
-    ESPEnabled = false,
-    VisibleCheck = true,
-    TeamCheck = true,
-    TargetMode = "All",
-}
+local pg = LocalPlayer:WaitForChild("PlayerGui")
+if pg:FindFirstChild("AimGui") then pg.AimGui:Destroy() end
+local gui = Instance.new("ScreenGui", pg)
+gui.Name = "AimGui"
+gui.ResetOnSpawn = false
 
-local targetModes = {"All", "Police", "Criminals", "Inmates"}
-local bgColor = Color3.fromRGB(20, 35, 50)
-local btnColor = Color3.fromRGB(30, 50, 70)
-local btnActiveColor = Color3.fromRGB(50, 80, 110)
-
-local function getGui()
-    local pg = LocalPlayer:WaitForChild("PlayerGui")
-    local old = pg:FindFirstChild("MobileAimGui")
-    if old then old:Destroy() end
-    local sg = Instance.new("ScreenGui")
-    sg.Name = "MobileAimGui"
-    sg.ResetOnSpawn = false
-    sg.IgnoreGuiInset = true
-    sg.Parent = pg
-    return sg
-end
-
-local gui = getGui()
-
-local fov = Instance.new("Frame")
+local fov = Instance.new("Frame", gui)
 fov.BackgroundTransparency = 1
-fov.Size = UDim2.new(0, config.FOVRadius * 2, 0, config.FOVRadius * 2)
-fov.Position = UDim2.new(0.5, -config.FOVRadius, 0.5, -config.FOVRadius)
-fov.Parent = gui
-Instance.new("UICorner", fov).CornerRadius = UDim.new(1, 0)
-local stroke = Instance.new("UIStroke", fov)
-stroke.Color = Color3.fromRGB(255, 0, 0)
-stroke.Thickness = 2
+fov.Size = UDim2.new(0, cfg.Fov * 2, 0, cfg.Fov * 2)
+fov.Position = UDim2.new(0.5, -cfg.Fov, 0.5, -cfg.Fov)
+Instance.new("UICorner", fov).CornerRadius = UDim.new(1,0)
 
-local menu = Instance.new("Frame")
-menu.Size = UDim2.new(0, 380, 0, 260)
+local menu = Instance.new("Frame", gui)
+menu.Size = UDim2.new(0, 380, 0, 300)
 menu.Position = UDim2.new(0, 20, 0, 60)
-menu.BackgroundColor3 = bgColor
-menu.Parent = gui
+menu.BackgroundColor3 = bg
 Instance.new("UICorner", menu).CornerRadius = UDim.new(0, 14)
-local mstroke = Instance.new("UIStroke", menu)
-mstroke.Thickness = 2
+local ms = Instance.new("UIStroke", menu)
+ms.Thickness = 2
 
 local title = Instance.new("TextLabel", menu)
 title.Size = UDim2.new(1, -40, 0, 35)
@@ -60,355 +35,351 @@ title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
 
-local closeBtn = Instance.new("TextButton", menu)
-closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(1, -35, 0, 2)
-closeBtn.BackgroundTransparency = 1
-closeBtn.Text = "X"
-closeBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 18
+local close = Instance.new("TextButton", menu)
+close.Size = UDim2.new(0, 30, 0, 30)
+close.Position = UDim2.new(1, -35, 0, 2)
+close.BackgroundTransparency = 1
+close.Text = "X"
+close.TextColor3 = Color3.fromRGB(255, 80, 80)
+close.Font = Enum.Font.GothamBold
+close.TextSize = 18
 
-local openBtn = Instance.new("TextButton", gui)
-openBtn.Size = UDim2.new(0, 45, 0, 45)
-openBtn.Position = UDim2.new(0, 20, 0, 60)
-openBtn.BackgroundColor3 = bgColor
-openBtn.Text = "A"
-openBtn.TextColor3 = Color3.new(1,1,1)
-openBtn.Font = Enum.Font.GothamBold
-openBtn.TextSize = 20
-Instance.new("UICorner", openBtn).CornerRadius = UDim.new(1, 0)
-local obstroke = Instance.new("UIStroke", openBtn)
-obstroke.Thickness = 2
-openBtn.Visible = false
+local open = Instance.new("TextButton", gui)
+open.Size = UDim2.new(0, 45, 0, 45)
+open.Position = UDim2.new(0, 20, 0, 60)
+open.BackgroundColor3 = bg
+open.Text = "A"
+open.TextColor3 = Color3.new(1,1,1)
+open.Font = Enum.Font.GothamBold
+open.TextSize = 20
+Instance.new("UICorner", open).CornerRadius = UDim.new(1,0)
+local os = Instance.new("UIStroke", open)
+os.Thickness = 2
+open.Visible = false
 
-closeBtn.MouseButton1Click:Connect(function() menu.Visible = false; openBtn.Visible = true end)
-openBtn.MouseButton1Click:Connect(function() menu.Visible = true; openBtn.Visible = false end)
+close.MouseButton1Click:Connect(function() menu.Visible = false; open.Visible = true end)
+open.MouseButton1Click:Connect(function() menu.Visible = true; open.Visible = false end)
 
-local pages = {}
-local currentPage = nil
-local function createPage(name)
+local pages, curPage = {}, nil
+local function mkPage(name)
     local p = Instance.new("Frame", menu)
     p.Size = UDim2.new(1, 0, 1, -80)
     p.Position = UDim2.new(0, 0, 0, 80)
     p.BackgroundTransparency = 1
     p.Visible = false
     pages[name] = p
-    return p
 end
+mkPage("Aim"); mkPage("ESP"); mkPage("Settings")
+local function switch(name) if curPage then pages[curPage].Visible = false end; curPage = name; pages[name].Visible = true end
 
-local aimPage = createPage("Aim")
-local espPage = createPage("ESP")
-local settingsPage = createPage("Settings")
-
-local function switchPage(name)
-    if currentPage then pages[currentPage].Visible = false end
-    currentPage = name
-    pages[name].Visible = true
-end
-
-local navButtons = {}
-local function makeNavButton(text, x, pageName)
-    local btn = Instance.new("TextButton", menu)
-    btn.Size = UDim2.new(0, 50, 0, 50)
-    btn.Position = UDim2.new(0, x, 0, 30)
-    btn.BackgroundColor3 = btnColor
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 24
-    btn.Text = text
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    btn.MouseButton1Click:Connect(function()
-        for _, b in pairs(navButtons) do b.BackgroundColor3 = btnColor end
-        btn.BackgroundColor3 = btnActiveColor
-        switchPage(pageName)
+local navs = {}
+local function mkNav(txt, x, pName)
+    local b = Instance.new("TextButton", menu)
+    b.Size = UDim2.new(0, 50, 0, 50)
+    b.Position = UDim2.new(0, x, 0, 30)
+    b.BackgroundColor3 = btn
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.Gotham
+    b.TextSize = 24
+    b.Text = txt
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
+    b.MouseButton1Click:Connect(function()
+        for _, btn in pairs(navs) do btn.BackgroundColor3 = btn end
+        b.BackgroundColor3 = act
+        switch(pName)
     end)
-    table.insert(navButtons, btn)
+    table.insert(navs, b)
 end
+mkNav("🎯", 10, "Aim"); mkNav("👁️", 70, "ESP"); mkNav("⚙️", 130, "Settings")
 
-makeNavButton("🎯", 10, "Aim")
-makeNavButton("👁️", 70, "ESP")
-makeNavButton("⚙️", 130, "Settings")
+local aimB = Instance.new("TextButton", pages.Aim)
+aimB.Size = UDim2.new(0, 175, 0, 32)
+aimB.Position = UDim2.new(0, 10, 0, 10)
+aimB.BackgroundColor3 = btn
+aimB.TextColor3 = Color3.new(1,1,1)
+aimB.Font = Enum.Font.Gotham
+aimB.TextSize = 13
+aimB.Text = "Aim: OFF"
+Instance.new("UICorner", aimB).CornerRadius = UDim.new(0, 6)
+aimB.MouseButton1Click:Connect(function() cfg.Aim = not cfg.Aim; aimB.Text = "Aim: " .. (cfg.Aim and "ON" or "OFF") end)
 
-local aimBtn = Instance.new("TextButton", aimPage)
-aimBtn.Size = UDim2.new(0, 175, 0, 32)
-aimBtn.Position = UDim2.new(0, 10, 0, 10)
-aimBtn.BackgroundColor3 = btnColor
-aimBtn.TextColor3 = Color3.new(1,1,1)
-aimBtn.Font = Enum.Font.Gotham
-aimBtn.TextSize = 13
-aimBtn.Text = "Aim: OFF"
-Instance.new("UICorner", aimBtn).CornerRadius = UDim.new(0, 6)
-aimBtn.MouseButton1Click:Connect(function()
-    config.AimEnabled = not config.AimEnabled
-    aimBtn.Text = "Aim: " .. (config.AimEnabled and "ON" or "OFF")
-end)
-
-local fovBg = Instance.new("Frame", aimPage)
+local fovBg = Instance.new("Frame", pages.Aim)
 fovBg.Size = UDim2.new(0, 350, 0, 10)
 fovBg.Position = UDim2.new(0, 10, 0, 65)
-fovBg.BackgroundColor3 = Color3.fromRGB(40, 60, 80)
-Instance.new("UICorner", fovBg).CornerRadius = UDim.new(1, 0)
-
+fovBg.BackgroundColor3 = Color3.fromRGB(30,60,90)
+Instance.new("UICorner", fovBg).CornerRadius = UDim.new(1,0)
 local fovFill = Instance.new("Frame", fovBg)
-fovFill.Size = UDim2.new(config.FOVRadius / 360, 0, 1, 0)
-fovFill.BackgroundColor3 = btnActiveColor
-Instance.new("UICorner", fovFill).CornerRadius = UDim.new(1, 0)
-
+fovFill.Size = UDim2.new(cfg.Fov/360, 0, 1, 0)
+fovFill.BackgroundColor3 = act
+Instance.new("UICorner", fovFill).CornerRadius = UDim.new(1,0)
 local fovKnob = Instance.new("Frame", fovBg)
 fovKnob.Size = UDim2.new(0, 20, 0, 20)
-fovKnob.Position = UDim2.new(config.FOVRadius / 360, -10, 0.5, -10)
+fovKnob.Position = UDim2.new(cfg.Fov/360, -10, 0.5, -10)
 fovKnob.BackgroundColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", fovKnob).CornerRadius = UDim.new(1, 0)
+Instance.new("UICorner", fovKnob).CornerRadius = UDim.new(1,0)
 
-local isDragging = false
-local function updateSlider(input)
-    local relX = math.clamp(input.Position.X - fovBg.AbsolutePosition.X, 0, fovBg.AbsoluteSize.X)
-    local val = math.floor((relX / fovBg.AbsoluteSize.X) * 360)
-    config.FOVRadius = val
-    fovFill.Size = UDim2.new(val / 360, 0, 1, 0)
-    fovKnob.Position = UDim2.new(val / 360, -10, 0.5, -10)
-    fov.Size = UDim2.new(0, val * 2, 0, val * 2)
-    fov.Position = UDim2.new(0.5, -val, 0.5, -val)
+local dragF = false
+local function updFov(inp)
+    local rX = math.clamp(inp.Position.X - fovBg.AbsolutePosition.X, 0, fovBg.AbsoluteSize.X)
+    local v = math.floor((rX/fovBg.AbsoluteSize.X)*360)
+    cfg.Fov = v
+    fovFill.Size = UDim2.new(v/360, 0, 1, 0)
+    fovKnob.Position = UDim2.new(v/360, -10, 0.5, -10)
+    fov.Size = UDim2.new(0, v*2, 0, v*2)
+    fov.Position = UDim2.new(0.5, -v, 0.5, -v)
 end
+fovBg.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then dragF = true; updFov(i) end end)
+UserInputService.InputChanged:Connect(function(i) if dragF and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then updFov(i) end end)
+UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then dragF = false end end)
 
-fovBg.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDragging = true; updateSlider(i)
-    end
-end)
-UserInputService.InputChanged:Connect(function(i)
-    if isDragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
-        updateSlider(i)
-    end
-end)
-UserInputService.InputEnded:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDragging = false
-    end
-end)
+local killB = Instance.new("TextButton", pages.Aim)
+killB.Size = UDim2.new(0, 175, 0, 32)
+killB.Position = UDim2.new(0, 10, 0, 110)
+killB.BackgroundColor3 = btn
+killB.TextColor3 = Color3.new(1,1,1)
+killB.Font = Enum.Font.Gotham
+killB.TextSize = 13
+killB.Text = "Kill Check: ON"
+Instance.new("UICorner", killB).CornerRadius = UDim.new(0, 6)
+killB.MouseButton1Click:Connect(function() cfg.Kill = not cfg.Kill; killB.Text = "Kill Check: " .. (cfg.Kill and "ON" or "OFF") end)
 
-local teamBtn = Instance.new("TextButton", aimPage)
-teamBtn.Size = UDim2.new(0, 175, 0, 32)
-teamBtn.Position = UDim2.new(0, 10, 0, 110)
-teamBtn.BackgroundColor3 = btnColor
-teamBtn.TextColor3 = Color3.new(1,1,1)
-teamBtn.Font = Enum.Font.Gotham
-teamBtn.TextSize = 13
-teamBtn.Text = "Team Check: ON"
-Instance.new("UICorner", teamBtn).CornerRadius = UDim.new(0, 6)
-teamBtn.MouseButton1Click:Connect(function()
-    config.TeamCheck = not config.TeamCheck
-    teamBtn.Text = "Team Check: " .. (config.TeamCheck and "ON" or "OFF")
-end)
+local tgtB = Instance.new("TextButton", pages.Aim)
+tgtB.Size = UDim2.new(0, 175, 0, 32)
+tgtB.Position = UDim2.new(0, 195, 0, 110)
+tgtB.BackgroundColor3 = btn
+tgtB.TextColor3 = Color3.new(1,1,1)
+tgtB.Font = Enum.Font.Gotham
+tgtB.TextSize = 13
+tgtB.Text = "Target: All"
+Instance.new("UICorner", tgtB).CornerRadius = UDim.new(0, 6)
 
-local targetBtn = Instance.new("TextButton", aimPage)
-targetBtn.Size = UDim2.new(0, 175, 0, 32)
-targetBtn.Position = UDim2.new(0, 195, 0, 110)
-targetBtn.BackgroundColor3 = btnColor
-targetBtn.TextColor3 = Color3.new(1,1,1)
-targetBtn.Font = Enum.Font.Gotham
-targetBtn.TextSize = 13
-targetBtn.Text = "Target: All"
-Instance.new("UICorner", targetBtn).CornerRadius = UDim.new(0, 6)
+local drop = Instance.new("Frame", pages.Aim)
+drop.Size = UDim2.new(0, 175, 0, 120)
+drop.Position = UDim2.new(0, 195, 0, 146)
+drop.BackgroundColor3 = bg
+drop.Visible = false
+Instance.new("UICorner", drop).CornerRadius = UDim.new(0, 6)
 
-local dropdown = Instance.new("Frame", aimPage)
-dropdown.Size = UDim2.new(0, 175, 0, 120)
-dropdown.Position = UDim2.new(0, 195, 0, 146)
-dropdown.BackgroundColor3 = bgColor
-dropdown.Visible = false
-Instance.new("UICorner", dropdown).CornerRadius = UDim.new(0, 6)
-
-for i, mode in ipairs(targetModes) do
-    local opt = Instance.new("TextButton", dropdown)
-    opt.Size = UDim2.new(1, 0, 0, 30)
-    opt.Position = UDim2.new(0, 0, 0, (i-1)*30)
-    opt.BackgroundTransparency = 1
-    opt.Text = mode
-    opt.TextColor3 = Color3.new(1,1,1)
-    opt.Font = Enum.Font.Gotham
-    opt.TextSize = 13
-    opt.MouseButton1Click:Connect(function()
-        config.TargetMode = mode
-        targetBtn.Text = "Target: " .. mode
-        dropdown.Visible = false
-    end)
+for i, m in ipairs(modes) do
+    local o = Instance.new("TextButton", drop)
+    o.Size = UDim2.new(1, 0, 0, 30)
+    o.Position = UDim2.new(0, 0, 0, (i-1)*30)
+    o.BackgroundTransparency = 1
+    o.Text = m
+    o.TextColor3 = Color3.new(1,1,1)
+    o.Font = Enum.Font.Gotham
+    o.TextSize = 13
+    o.MouseButton1Click:Connect(function() cfg.Target = m; tgtB.Text = "Target: " .. m; drop.Visible = false end)
 end
-targetBtn.MouseButton1Click:Connect(function() dropdown.Visible = not dropdown.Visible end)
+tgtB.MouseButton1Click:Connect(function() drop.Visible = not drop.Visible end)
 
-local espBtn = Instance.new("TextButton", espPage)
-espBtn.Size = UDim2.new(0, 175, 0, 32)
-espBtn.Position = UDim2.new(0, 10, 0, 10)
-espBtn.BackgroundColor3 = btnColor
-espBtn.TextColor3 = Color3.new(1,1,1)
-espBtn.Font = Enum.Font.Gotham
-espBtn.TextSize = 13
-espBtn.Text = "ESP: OFF"
-Instance.new("UICorner", espBtn).CornerRadius = UDim.new(0, 6)
-espBtn.MouseButton1Click:Connect(function()
-    config.ESPEnabled = not config.ESPEnabled
-    espBtn.Text = "ESP: " .. (config.ESPEnabled and "ON" or "OFF")
-end)
+local espB = Instance.new("TextButton", pages.ESP)
+espB.Size = UDim2.new(0, 175, 0, 32)
+espB.Position = UDim2.new(0, 10, 0, 10)
+espB.BackgroundColor3 = btn
+espB.TextColor3 = Color3.new(1,1,1)
+espB.Font = Enum.Font.Gotham
+espB.TextSize = 13
+espB.Text = "ESP: OFF"
+Instance.new("UICorner", espB).CornerRadius = UDim.new(0, 6)
+espB.MouseButton1Click:Connect(function() cfg.Esp = not cfg.Esp; espB.Text = "ESP: " .. (cfg.Esp and "ON" or "OFF") end)
 
-local sizeBtn = Instance.new("TextButton", settingsPage)
-sizeBtn.Size = UDim2.new(0, 175, 0, 32)
-sizeBtn.Position = UDim2.new(0, 10, 0, 10)
-sizeBtn.BackgroundColor3 = btnColor
-sizeBtn.TextColor3 = Color3.new(1,1,1)
-sizeBtn.Font = Enum.Font.Gotham
-sizeBtn.TextSize = 13
-sizeBtn.Text = "Menu Size: 1.0"
-Instance.new("UICorner", sizeBtn).CornerRadius = UDim.new(0, 6)
-local sizes = {1.0, 0.8, 1.2, 1.5}
-local sizeIdx = 1
-sizeBtn.MouseButton1Click:Connect(function()
-    sizeIdx = sizeIdx % #sizes + 1
-    local ns = sizes[sizeIdx]
-    menu.Size = UDim2.new(0, 380 * ns, 0, 260 * ns)
-    sizeBtn.Text = "Menu Size: " .. ns
-end)
+local szB = Instance.new("TextButton", pages.Settings)
+szB.Size = UDim2.new(0, 175, 0, 32)
+szB.Position = UDim2.new(0, 10, 0, 10)
+szB.BackgroundColor3 = btn
+szB.TextColor3 = Color3.new(1,1,1)
+szB.Font = Enum.Font.Gotham
+szB.TextSize = 13
+szB.Text = "Menu Size: 1.0"
+Instance.new("UICorner", szB).CornerRadius = UDim.new(0, 6)
+local szs = {1.0, 0.8, 1.2, 1.5}
+local szI = 1
+szB.MouseButton1Click:Connect(function() szI = szI % #szs + 1; local ns = szs[szI]; menu.Size = UDim2.new(0, 380*ns, 0, 300*ns); szB.Text = "Menu Size: " .. ns end)
 
-local bindBtn = Instance.new("TextButton", settingsPage)
-bindBtn.Size = UDim2.new(0, 175, 0, 32)
-bindBtn.Position = UDim2.new(0, 10, 0, 50)
-bindBtn.BackgroundColor3 = btnColor
-bindBtn.TextColor3 = Color3.new(1,1,1)
-bindBtn.Font = Enum.Font.Gotham
-bindBtn.TextSize = 13
-bindBtn.Text = "Aim Bind: OFF"
-Instance.new("UICorner", bindBtn).CornerRadius = UDim.new(0, 6)
+local bindB = Instance.new("TextButton", pages.Settings)
+bindB.Size = UDim2.new(0, 175, 0, 32)
+bindB.Position = UDim2.new(0, 10, 0, 50)
+bindB.BackgroundColor3 = btn
+bindB.TextColor3 = Color3.new(1,1,1)
+bindB.Font = Enum.Font.Gotham
+bindB.TextSize = 13
+bindB.Text = "Aim Bind: OFF"
+Instance.new("UICorner", bindB).CornerRadius = UDim.new(0, 6)
 
-local floatBind = Instance.new("TextButton", gui)
-floatBind.Size = UDim2.new(0, 90, 0, 45)
-floatBind.Position = UDim2.new(0.5, 60, 0.85, 0)
-floatBind.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-floatBind.TextColor3 = Color3.new(1,1,1)
-floatBind.Font = Enum.Font.GothamBold
-floatBind.TextSize = 16
-floatBind.Text = "AIM OFF"
-floatBind.Visible = false
-Instance.new("UICorner", floatBind).CornerRadius = UDim.new(0, 10)
+local spdBg = Instance.new("Frame", pages.Settings)
+spdBg.Size = UDim2.new(0, 350, 0, 10)
+spdBg.Position = UDim2.new(0, 10, 0, 105)
+spdBg.BackgroundColor3 = Color3.fromRGB(30,60,90)
+Instance.new("UICorner", spdBg).CornerRadius = UDim.new(1,0)
+local spdFill = Instance.new("Frame", spdBg)
+spdFill.Size = UDim2.new((cfg.Speed-16)/14, 0, 1, 0)
+spdFill.BackgroundColor3 = act
+Instance.new("UICorner", spdFill).CornerRadius = UDim.new(1,0)
+local spdKnob = Instance.new("Frame", spdBg)
+spdKnob.Size = UDim2.new(0, 20, 0, 20)
+spdKnob.Position = UDim2.new((cfg.Speed-16)/14, -10, 0.5, -10)
+spdKnob.BackgroundColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", spdKnob).CornerRadius = UDim.new(1,0)
 
-bindBtn.MouseButton1Click:Connect(function()
-    config.AimBind = not config.AimBind
-    bindBtn.Text = "Aim Bind: " .. (config.AimBind and "ON" or "OFF")
-    floatBind.Visible = config.AimBind
-end)
-floatBind.MouseButton1Click:Connect(function()
-    config.AimEnabled = not config.AimEnabled
-    floatBind.Text = config.AimEnabled and "AIM ON" or "AIM OFF"
-    floatBind.BackgroundColor3 = config.AimEnabled and Color3.fromRGB(40, 200, 40) or Color3.fromRGB(200, 40, 40)
-end)
+local spdTxt = Instance.new("TextLabel", pages.Settings)
+spdTxt.Size = UDim2.new(0, 175, 0, 20)
+spdTxt.Position = UDim2.new(0, 10, 0, 85)
+spdTxt.BackgroundTransparency = 1
+spdTxt.Text = "Speed: " .. cfg.Speed
+spdTxt.TextColor3 = Color3.new(1,1,1)
+spdTxt.Font = Enum.Font.Gotham
+spdTxt.TextSize = 13
+spdTxt.TextXAlignment = Enum.TextXAlignment.Left
 
-local function makeDraggable(frame, target)
-    local dragging, dragStart, startPos = false, nil, nil
-    frame.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging, dragStart, startPos = true, i.Position, target.Position
-        end
-    end)
-    frame.InputChanged:Connect(function(i)
-        if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
-            local d = i.Position - dragStart
-            target.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
-        end
-    end)
-    frame.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-    end)
+local spdInp = Instance.new("TextBox", pages.Settings)
+spdInp.Size = UDim2.new(0, 80, 0, 30)
+spdInp.Position = UDim2.new(0, 195, 0, 85)
+spdInp.BackgroundColor3 = btn
+spdInp.TextColor3 = Color3.new(1,1,1)
+spdInp.Font = Enum.Font.Gotham
+spdInp.TextSize = 13
+spdInp.Text = tostring(cfg.Speed)
+spdInp.PlaceholderText = "16-30"
+Instance.new("UICorner", spdInp).CornerRadius = UDim.new(0, 6)
+
+local function applySpd(v)
+    v = math.clamp(tonumber(v) or 16, 16, 30)
+    cfg.Speed = v
+    spdInp.Text = tostring(v)
+    spdTxt.Text = "Speed: " .. v
+    spdFill.Size = UDim2.new((v-16)/14, 0, 1, 0)
+    spdKnob.Position = UDim2.new((v-16)/14, -10, 0.5, -10)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = v end
 end
-makeDraggable(title, menu)
-makeDraggable(floatBind, floatBind)
-makeDraggable(openBtn, openBtn)
+spdInp.FocusLost:Connect(function() applySpd(spdInp.Text) end)
 
-local hue = 0
+local dragS = false
+local function updSpd(inp)
+    local rX = math.clamp(inp.Position.X - spdBg.AbsolutePosition.X, 0, spdBg.AbsoluteSize.X)
+    applySpd(math.floor((rX/spdBg.AbsoluteSize.X)*14 + 16))
+end
+spdBg.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then dragS = true; updSpd(i) end end)
+UserInputService.InputChanged:Connect(function(i) if dragS and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then updSpd(i) end end)
+UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then dragS = false end end)
+
+LocalPlayer.CharacterAdded:Connect(function(c) task.wait(1); local h = c:FindFirstChild("Humanoid"); if h then h.WalkSpeed = cfg.Speed end end)
+if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = cfg.Speed end
+
+local fBind = Instance.new("TextButton", gui)
+fBind.Size = UDim2.new(0, 90, 0, 45)
+fBind.Position = UDim2.new(0.5, 60, 0.85, 0)
+fBind.BackgroundColor3 = Color3.fromRGB(200,40,40)
+fBind.TextColor3 = Color3.new(1,1,1)
+fBind.Font = Enum.Font.GothamBold
+fBind.TextSize = 16
+fBind.Text = "AIM OFF"
+fBind.Visible = false
+Instance.new("UICorner", fBind).CornerRadius = UDim.new(0, 10)
+
+bindB.MouseButton1Click:Connect(function() cfg.Bind = not cfg.Bind; bindB.Text = "Aim Bind: " .. (cfg.Bind and "ON" or "OFF"); fBind.Visible = cfg.Bind end)
+fBind.MouseButton1Click:Connect(function()
+    cfg.Aim = not cfg.Aim
+    fBind.Text = cfg.Aim and "AIM ON" or "AIM OFF"
+    fBind.BackgroundColor3 = cfg.Aim and Color3.fromRGB(40,200,40) or Color3.fromRGB(200,40,40)
+end)
+
+local function mkDrag(f, t)
+    local d, s, p = false, nil, nil
+    f.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then d, s, p = true, i.Position, t.Position end end)
+    f.InputChanged:Connect(function(i) if d and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then local df = i.Position - s; t.Position = UDim2.new(p.X.Scale, p.X.Offset + df.X, p.Y.Scale, p.Y.Offset + df.Y) end end)
+    f.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then d = false end end)
+end
+mkDrag(title, menu); mkDrag(fBind, fBind); mkDrag(open, open)
+
+local pal = {Color3.fromRGB(0,200,255), Color3.fromRGB(0,100,255), Color3.fromRGB(0,50,150), Color3.fromRGB(0,150,255), Color3.fromRGB(20,80,200)}
+local ci, ct = 1, 0
 RunService.RenderStepped:Connect(function(dt)
-    hue = (hue + dt * 0.1) % 1
-    local c = Color3.fromHSV(hue, 1, 1)
-    mstroke.Color = c
-    obstroke.Color = c
+    local ni = ci % #pal + 1
+    ct = ct + dt * 0.5
+    if ct >= 1 then ct = 0; ci = ni end
+    local fc = pal[ci]:Lerp(pal[ni], ct)
+    ms.Color = fc; os.Color = fc; fovFill.BackgroundColor3 = fc; spdFill.BackgroundColor3 = fc
 end)
 
-local function getColor(p)
+local function getCol(p)
     local n = (p.Team and p.Team.Name:lower()) or ""
-    if n:find("guard") or n:find("cop") or n:find("police") then return Color3.fromRGB(0, 100, 255) end
-    if n:find("criminal") or n:find("prisoner") then return Color3.fromRGB(255, 0, 0) end
-    if n:find("inmate") or n:find("prison") then return Color3.fromRGB(0, 255, 0) end
-    if p.TeamColor == BrickColor.new("Really blue") then return Color3.fromRGB(0, 100, 255) end
-    if p.TeamColor == BrickColor.new("Really red") then return Color3.fromRGB(255, 0, 0) end
-    if p.TeamColor == BrickColor.new("Bright green") then return Color3.fromRGB(0, 255, 0) end
+    if n:find("guard") or n:find("cop") or n:find("police") then return Color3.fromRGB(0,100,255) end
+    if n:find("criminal") or n:find("prisoner") then return Color3.fromRGB(255,0,0) end
+    if n:find("inmate") or n:find("prison") then return Color3.fromRGB(0,255,0) end
+    if p.TeamColor == BrickColor.new("Really blue") then return Color3.fromRGB(0,100,255) end
+    if p.TeamColor == BrickColor.new("Really red") then return Color3.fromRGB(255,0,0) end
+    if p.TeamColor == BrickColor.new("Bright green") then return Color3.fromRGB(0,255,0) end
     return Color3.new(1,1,1)
 end
 
-local function setupPlayer(p)
+local function setupP(p)
     if p == LocalPlayer then return end
-    local function apply()
+    local function a()
         if not p.Character then return end
-        local old = p.Character:FindFirstChild("ESP_Highlight")
-        if old then old:Destroy() end
+        local o = p.Character:FindFirstChild("ESP_Highlight")
+        if o then o:Destroy() end
         local h = Instance.new("Highlight", p.Character)
         h.Name = "ESP_Highlight"
-        h.FillColor = getColor(p)
+        h.FillColor = getCol(p)
         h.OutlineColor = Color3.new(1,1,1)
         h.FillTransparency = 0.3
         h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        h.Enabled = config.ESPEnabled
+        h.Enabled = cfg.Esp
     end
-    p.CharacterAdded:Connect(function() task.wait(1); apply() end)
-    if p.Character then apply() end
+    p.CharacterAdded:Connect(function() task.wait(1); a() end)
+    if p.Character then a() end
 end
-Players.PlayerAdded:Connect(setupPlayer)
-for _, p in ipairs(Players:GetPlayers()) do setupPlayer(p) end
+Players.PlayerAdded:Connect(setupP)
+for _, p in ipairs(Players:GetPlayers()) do setupP(p) end
 
-local function isVisible(part)
-    if not config.VisibleCheck then return true end
+local function isVis(part)
+    if not cfg.Kill then return true end -- простой обход
     local rp = RaycastParams.new()
     rp.FilterType = Enum.RaycastFilterType.Exclude
     rp.FilterDescendantsInstances = {LocalPlayer.Character, part.Parent}
-    local res = workspace:Raycast(Camera.CFrame.Position, part.Position - Camera.CFrame.Position, rp)
-    return res == nil
+    return workspace:Raycast(Camera.CFrame.Position, part.Position - Camera.CFrame.Position, rp) == nil
 end
 
 RunService.RenderStepped:Connect(function()
-    if config.AimEnabled and config.AimBind then
-        local best, bestDist = nil, config.FOVRadius
+    if cfg.Aim and cfg.Bind then
+        local b, bd = nil, cfg.Fov
         local c = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
-                local head = p.Character:FindFirstChild("Head")
-                local hum = p.Character:FindFirstChild("Humanoid")
-                if head and hum and hum.Health > 0 then
-                    if config.TeamCheck and p.Team == LocalPlayer.Team then continue end
-                    local n = (p.Team and p.Team.Name:lower()) or ""
-                    local valid = false
-                    if config.TargetMode == "All" then valid = true
-                    elseif config.TargetMode == "Police" and (n:find("guard") or n:find("cop") or n:find("police")) then valid = true
-                    elseif config.TargetMode == "Criminals" and (n:find("criminal") or n:find("prisoner")) then valid = true
-                    elseif config.TargetMode == "Inmates" and (n:find("inmate") or n:find("prison")) then valid = true end
-                    
-                    if valid then
-                        local sp, on = Camera:WorldToViewportPoint(head.Position)
-                        if on then
-                            local d = (Vector2.new(sp.X, sp.Y) - c).Magnitude
-                            if d < bestDist and isVisible(head) then bestDist = d; best = head end
+                local h = p.Character:FindFirstChild("Head")
+                local hu = p.Character:FindFirstChild("Humanoid")
+                if h and hu then
+                    local vh = true
+                    if cfg.Kill and hu.Health <= 0 then vh = false end
+                    if vh then
+                        local n = (p.Team and p.Team.Name:lower()) or ""
+                        local vm = false
+                        if cfg.Target == "All" then vm = true
+                        elseif cfg.Target == "Police" and (n:find("guard") or n:find("cop") or n:find("police")) then vm = true
+                        elseif cfg.Target == "Criminals" and (n:find("criminal") or n:find("prisoner")) then vm = true
+                        elseif cfg.Target == "Inmates" and (n:find("inmate") or n:find("prison")) then vm = true end
+                        if vm then
+                            local sp, on = Camera:WorldToViewportPoint(h.Position)
+                            if on then
+                                local d = (Vector2.new(sp.X, sp.Y) - c).Magnitude
+                                if d < bd and isVis(h) then bd = d; b = h end
+                            end
                         end
                     end
                 end
             end
         end
-        if best then Camera.CFrame = CFrame.new(Camera.CFrame.Position, best.Position) end
+        if b then Camera.CFrame = CFrame.new(Camera.CFrame.Position, b.Position) end
     end
 
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character then
             local h = p.Character:FindFirstChild("ESP_Highlight")
-            if h then
-                h.Enabled = config.ESPEnabled
-                if config.ESPEnabled then h.FillColor = getColor(p) end
-            end
+            if h then h.Enabled = cfg.Esp; if cfg.Esp then h.FillColor = getCol(p) end end
         end
     end
 end)
 
-navButtons[1].BackgroundColor3 = btnActiveColor
-switchPage("Aim")
+navs[1].BackgroundColor3 = act
+switch("Aim")
