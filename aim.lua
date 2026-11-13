@@ -5,7 +5,12 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
-local cfg = { Aim = false, Fov = 150, Bind = false, Esp = false, Kill = true, TargetPolice = false, TargetCriminals = false, TargetInmates = false, Speed = 16, InfJump = false, JumpBind = false }
+local cfg = { 
+    Aim = false, Fov = 150, Bind = false, Esp = false, Kill = true, 
+    TargetPolice = false, TargetCriminals = false, TargetInmates = false, 
+    Speed = 16, InfJump = false, JumpBind = false,
+    EspNames = false 
+}
 local bg, btn, act = Color3.fromRGB(20,45,70), Color3.fromRGB(45,85,115), Color3.fromRGB(80,150,190)
 
 local pg = LocalPlayer:WaitForChild("PlayerGui")
@@ -97,6 +102,7 @@ local function mkNav(txt, x, pName)
 end
 mkNav("🎯", 10, "Aim"); mkNav("👁️", 70, "ESP"); mkNav("⚙️", 130, "Settings")
 
+-- СТРАНИЦА AIM
 local aimB = Instance.new("TextButton", pages.Aim)
 aimB.Size = UDim2.new(0, 175, 0, 32)
 aimB.Position = UDim2.new(0, 10, 0, 10)
@@ -197,6 +203,7 @@ mkTargetOpt("Criminals", "TargetCriminals", 30)
 mkTargetOpt("Inmates", "TargetInmates", 60)
 tgtB.MouseButton1Click:Connect(function() drop.Visible = not drop.Visible end)
 
+-- СТРАНИЦА ESP
 local espB = Instance.new("TextButton", pages.ESP)
 espB.Size = UDim2.new(0, 175, 0, 32)
 espB.Position = UDim2.new(0, 10, 0, 10)
@@ -208,6 +215,18 @@ espB.Text = "ESP: OFF"
 Instance.new("UICorner", espB).CornerRadius = UDim.new(0, 6)
 espB.MouseButton1Click:Connect(function() cfg.Esp = not cfg.Esp; espB.Text = "ESP: " .. (cfg.Esp and "ON" or "OFF") end)
 
+local nickVisibleB = Instance.new("TextButton", pages.ESP)
+nickVisibleB.Size = UDim2.new(0, 175, 0, 32)
+nickVisibleB.Position = UDim2.new(0, 10, 0, 50)
+nickVisibleB.BackgroundColor3 = btn
+nickVisibleB.TextColor3 = Color3.new(1,1,1)
+nickVisibleB.Font = Enum.Font.Gotham
+nickVisibleB.TextSize = 13
+nickVisibleB.Text = "Nick Visible: OFF"
+Instance.new("UICorner", nickVisibleB).CornerRadius = UDim.new(0, 6)
+nickVisibleB.MouseButton1Click:Connect(function() cfg.EspNames = not cfg.EspNames; nickVisibleB.Text = "Nick Visible: " .. (cfg.EspNames and "ON" or "OFF") end)
+
+-- СТРАНИЦА НАСТРОЕК
 local szB = Instance.new("TextButton", pages.Settings)
 szB.Size = UDim2.new(0, 175, 0, 32)
 szB.Position = UDim2.new(0, 10, 0, 10)
@@ -305,7 +324,6 @@ Instance.new("UICorner", jBind).CornerRadius = UDim.new(0, 10)
 bindB.MouseButton1Click:Connect(function() cfg.Bind = not cfg.Bind; bindB.Text = "Aim Bind: " .. (cfg.Bind and "ON" or "OFF"); fBind.Visible = cfg.Bind end)
 fBind.MouseButton1Click:Connect(function() cfg.Aim = not cfg.Aim; fBind.Text = cfg.Aim and "AIM ON" or "AIM OFF"; fBind.BackgroundColor3 = cfg.Aim and Color3.fromRGB(40,200,40) or Color3.fromRGB(200,40,40) end)
 
--- Логика тумблера Inf Jump
 infJumpBtn.MouseButton1Click:Connect(function()
     cfg.InfJump = not cfg.InfJump
     infJumpBtn.Text = "Inf Jump: " .. (cfg.InfJump and "ON" or "OFF")
@@ -315,7 +333,6 @@ infJumpBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Логика бинда прыжка (включает/выключает тумблер)
 jumpBindBtn.MouseButton1Click:Connect(function()
     cfg.JumpBind = not cfg.JumpBind
     jumpBindBtn.Text = "Jump Bind: " .. (cfg.JumpBind and "ON" or "OFF")
@@ -358,6 +375,7 @@ RunService.RenderStepped:Connect(function(dt)
     if cfg.Bind then bindB.BackgroundColor3 = activeColor else bindB.BackgroundColor3 = btn end
     if cfg.InfJump then infJumpBtn.BackgroundColor3 = activeColor else infJumpBtn.BackgroundColor3 = btn end
     if cfg.JumpBind then jumpBindBtn.BackgroundColor3 = activeColor else jumpBindBtn.BackgroundColor3 = btn end
+    if cfg.EspNames then nickVisibleB.BackgroundColor3 = activeColor else nickVisibleB.BackgroundColor3 = btn end
 end)
 
 local function getCol(p)
@@ -372,6 +390,7 @@ local function setupP(p)
     if p == LocalPlayer then return end
     local function a()
         if not p.Character then return end
+        
         local o = p.Character:FindFirstChild("ESP_Highlight")
         if o then o:Destroy() end
         local h = Instance.new("Highlight", p.Character)
@@ -381,6 +400,28 @@ local function setupP(p)
         h.FillTransparency = 0.3
         h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         h.Enabled = cfg.Esp
+
+        local head = p.Character:FindFirstChild("Head")
+        if head then
+            local oldBb = head:FindFirstChild("ESP_Name")
+            if oldBb then oldBb:Destroy() end
+            
+            local bb = Instance.new("BillboardGui", head)
+            bb.Name = "ESP_Name"
+            bb.Size = UDim2.new(0, 100, 0, 20)
+            bb.StudsOffset = Vector3.new(0, 1.5, 0)
+            bb.AlwaysOnTop = true
+            bb.Enabled = cfg.EspNames
+            
+            local txt = Instance.new("TextLabel", bb)
+            txt.Size = UDim2.new(1, 0, 1, 0)
+            txt.BackgroundTransparency = 1
+            txt.Text = p.Name
+            txt.TextColor3 = getCol(p)
+            txt.TextStrokeTransparency = 0
+            txt.Font = Enum.Font.GothamBold
+            txt.TextSize = 12
+        end
     end
     p.CharacterAdded:Connect(function() task.wait(1); a() end)
     if p.Character then a() end
@@ -399,7 +440,6 @@ end
 LocalPlayer.CharacterAdded:Connect(function(c) task.wait(1); local h = c:FindFirstChild("Humanoid"); if h then h.WalkSpeed = cfg.Speed end end)
 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = cfg.Speed end
 
--- Прыжок срабатывает только если включен InfJump
 UserInputService.JumpRequest:Connect(function()
     if cfg.InfJump then
         local char = LocalPlayer.Character
@@ -430,24 +470,4 @@ RunService.RenderStepped:Connect(function()
                         if vm then
                             local sp, on = Camera:WorldToViewportPoint(h.Position)
                             if on then
-                                local d = (Vector2.new(sp.X, sp.Y) - c).Magnitude
-                                if d < bd and isVis(h) then bd = d; b = h end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        if b then Camera.CFrame = CFrame.new(Camera.CFrame.Position, b.Position) end
-    end
-
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character then
-            local h = p.Character:FindFirstChild("ESP_Highlight")
-            if h then h.Enabled = cfg.Esp; if cfg.Esp then h.FillColor = getCol(p) end end
-        end
-    end
-end)
-
-navs[1].BackgroundColor3 = act
-switch("Aim")
+                                local d = (Vector2.new(sp.X, sp.Y) - c).Ma
