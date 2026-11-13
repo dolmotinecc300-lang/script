@@ -3,14 +3,10 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
 
-local cfg = { 
-    Aim = false, Fov = 150, Bind = false, Esp = false, Kill = true, 
-    TargetPolice = false, TargetCriminals = false, TargetInmates = false, 
-    Speed = 16, InfJump = false, JumpBind = false,
-    EspNames = false 
-}
+-- Передаем конфиг и GUI в глобальную таблицу, чтобы engine.lua их увидел
+_G.cfg = { Aim = false, Fov = 150, Bind = false, Esp = false, Kill = true, TargetPolice = false, TargetCriminals = false, TargetInmates = false, Speed = 16, InfJump = false, JumpBind = false, EspNames = false }
+local cfg = _G.cfg
 local bg, btn, act = Color3.fromRGB(20,45,70), Color3.fromRGB(45,85,115), Color3.fromRGB(80,150,190)
 
 local pg = LocalPlayer:WaitForChild("PlayerGui")
@@ -19,15 +15,7 @@ local gui = Instance.new("ScreenGui", pg)
 gui.Name = "AimGui"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
-
-local fov = Instance.new("Frame", gui)
-fov.BackgroundTransparency = 1
-fov.Size = UDim2.new(0, cfg.Fov * 2, 0, cfg.Fov * 2)
-fov.Position = UDim2.new(0.5, -cfg.Fov, 0.5, -cfg.Fov)
-Instance.new("UICorner", fov).CornerRadius = UDim.new(1,0)
-local fovStroke = Instance.new("UIStroke", fov)
-fovStroke.Color = Color3.fromRGB(255,0,0)
-fovStroke.Thickness = 2
+_G.Gui = gui
 
 local menu = Instance.new("Frame", gui)
 menu.Size = UDim2.new(0, 380, 0, 300)
@@ -102,7 +90,6 @@ local function mkNav(txt, x, pName)
 end
 mkNav("🎯", 10, "Aim"); mkNav("👁️", 70, "ESP"); mkNav("⚙️", 130, "Settings")
 
--- СТРАНИЦА AIM
 local aimB = Instance.new("TextButton", pages.Aim)
 aimB.Size = UDim2.new(0, 175, 0, 32)
 aimB.Position = UDim2.new(0, 10, 0, 10)
@@ -136,8 +123,6 @@ local function updFov(inp)
     cfg.Fov = v
     fovFill.Size = UDim2.new(v/360, 0, 1, 0)
     fovKnob.Position = UDim2.new(v/360, -10, 0.5, -10)
-    fov.Size = UDim2.new(0, v*2, 0, v*2)
-    fov.Position = UDim2.new(0.5, -v, 0.5, -v)
 end
 fovBg.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then dragF = true; updFov(i) end end)
 UserInputService.InputChanged:Connect(function(i) if dragF and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then updFov(i) end end)
@@ -203,7 +188,6 @@ mkTargetOpt("Criminals", "TargetCriminals", 30)
 mkTargetOpt("Inmates", "TargetInmates", 60)
 tgtB.MouseButton1Click:Connect(function() drop.Visible = not drop.Visible end)
 
--- СТРАНИЦА ESP
 local espB = Instance.new("TextButton", pages.ESP)
 espB.Size = UDim2.new(0, 175, 0, 32)
 espB.Position = UDim2.new(0, 10, 0, 10)
@@ -226,7 +210,6 @@ nickVisibleB.Text = "Nick Visible: OFF"
 Instance.new("UICorner", nickVisibleB).CornerRadius = UDim.new(0, 6)
 nickVisibleB.MouseButton1Click:Connect(function() cfg.EspNames = not cfg.EspNames; nickVisibleB.Text = "Nick Visible: " .. (cfg.EspNames and "ON" or "OFF") end)
 
--- СТРАНИЦА НАСТРОЕК
 local szB = Instance.new("TextButton", pages.Settings)
 szB.Size = UDim2.new(0, 175, 0, 32)
 szB.Position = UDim2.new(0, 10, 0, 10)
@@ -295,7 +278,6 @@ local function applySpd(v)
     v = math.clamp(tonumber(v) or 16, 16, 30)
     cfg.Speed = v
     spdInp.Text = tostring(v)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = v end
 end
 spdInp.FocusLost:Connect(function() applySpd(spdInp.Text) end)
 
@@ -368,7 +350,6 @@ RunService.RenderStepped:Connect(function(dt)
     ms.Color = fc; os.Color = fc; fovFill.BackgroundColor3 = fc
     local pulse = (math.sin(tick() * 2) + 1) / 2
     local activeColor = fc:Lerp(Color3.new(1,1,1), 0.3 * pulse)
-    
     if cfg.Aim then aimB.BackgroundColor3 = activeColor else aimB.BackgroundColor3 = btn end
     if cfg.Kill then killB.BackgroundColor3 = activeColor else killB.BackgroundColor3 = btn end
     if cfg.Esp then espB.BackgroundColor3 = activeColor else espB.BackgroundColor3 = btn end
@@ -378,96 +359,14 @@ RunService.RenderStepped:Connect(function(dt)
     if cfg.EspNames then nickVisibleB.BackgroundColor3 = activeColor else nickVisibleB.BackgroundColor3 = btn end
 end)
 
-local function getCol(p)
-    local n = (p.Team and p.Team.Name:lower()) or ""
-    if n:find("guard") or n:find("cop") or n:find("police") then return Color3.fromRGB(0,100,255) end
-    if n:find("criminal") or n:find("prisoner") then return Color3.fromRGB(255,0,0) end
-    if n:find("inmate") or n:find("prison") then return Color3.fromRGB(0,255,0) end
-    return Color3.new(1,1,1)
+navs[1].BackgroundColor3 = act
+switch("Aim")
+
+-- ЗАГРУЗКА ДВИЖКА
+task.wait(0.2)
+local engineUrl = "ССЫЛКА_НА_RAW_ФАЙЛ_ENGINE.LUA"
+local success, code = pcall(function() return game:HttpGet(engineUrl) end)
+if success and code then
+    local func = loadstring(code)
+    if func then pcall(func) end
 end
-
-local function setupP(p)
-    if p == LocalPlayer then return end
-    local function a()
-        if not p.Character then return end
-        
-        local o = p.Character:FindFirstChild("ESP_Highlight")
-        if o then o:Destroy() end
-        local h = Instance.new("Highlight", p.Character)
-        h.Name = "ESP_Highlight"
-        h.FillColor = getCol(p)
-        h.OutlineColor = Color3.new(1,1,1)
-        h.FillTransparency = 0.3
-        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        h.Enabled = cfg.Esp
-
-        local head = p.Character:FindFirstChild("Head")
-        if head then
-            local oldBb = head:FindFirstChild("ESP_Name")
-            if oldBb then oldBb:Destroy() end
-            
-            local bb = Instance.new("BillboardGui", head)
-            bb.Name = "ESP_Name"
-            bb.Size = UDim2.new(0, 100, 0, 20)
-            bb.StudsOffset = Vector3.new(0, 1.5, 0)
-            bb.AlwaysOnTop = true
-            bb.Enabled = cfg.EspNames
-            
-            local txt = Instance.new("TextLabel", bb)
-            txt.Size = UDim2.new(1, 0, 1, 0)
-            txt.BackgroundTransparency = 1
-            txt.Text = p.Name
-            txt.TextColor3 = getCol(p)
-            txt.TextStrokeTransparency = 0
-            txt.Font = Enum.Font.GothamBold
-            txt.TextSize = 12
-        end
-    end
-    p.CharacterAdded:Connect(function() task.wait(1); a() end)
-    if p.Character then a() end
-end
-Players.PlayerAdded:Connect(setupP)
-for _, p in ipairs(Players:GetPlayers()) do setupP(p) end
-
-local function isVis(part)
-    if not cfg.Kill then return true end
-    local rp = RaycastParams.new()
-    rp.FilterType = Enum.RaycastFilterType.Exclude
-    rp.FilterDescendantsInstances = {LocalPlayer.Character, part.Parent}
-    return workspace:Raycast(Camera.CFrame.Position, part.Position - Camera.CFrame.Position, rp) == nil
-end
-
-LocalPlayer.CharacterAdded:Connect(function(c) task.wait(1); local h = c:FindFirstChild("Humanoid"); if h then h.WalkSpeed = cfg.Speed end end)
-if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = cfg.Speed end
-
-UserInputService.JumpRequest:Connect(function()
-    if cfg.InfJump then
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("Humanoid") then
-            char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
-    if cfg.Aim and cfg.Bind then
-        local b, bd = nil, cfg.Fov
-        local c = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then
-                local h = p.Character:FindFirstChild("Head")
-                local hu = p.Character:FindFirstChild("Humanoid")
-                if h and hu then
-                    local vh = true
-                    if cfg.Kill and hu.Health <= 0 then vh = false end
-                    if vh then
-                        local n = (p.Team and p.Team.Name:lower()) or ""
-                        local vm = false
-                        if cfg.TargetPolice and (n:find("guard") or n:find("cop") or n:find("police")) then vm = true end
-                        if cfg.TargetCriminals and (n:find("criminal") or n:find("prisoner")) then vm = true end
-                        if cfg.TargetInmates and (n:find("inmate") or n:find("prison")) then vm = true end
-                        
-                        if vm then
-                            local sp, on = Camera:WorldToViewportPoint(h.Position)
-                            if on then
-                                local d = (Vector2.new(sp.X, sp.Y) - c).Ma
