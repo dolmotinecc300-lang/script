@@ -3,6 +3,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+
 local cfg = { Aim = false, Fov = 150, Bind = false, Esp = false, Kill = true, Target = "All", Speed = 16 }
 local modes = {"All", "Police", "Criminals", "Inmates"}
 local bg, btn, act = Color3.fromRGB(20,45,70), Color3.fromRGB(30,60,90), Color3.fromRGB(50,100,140)
@@ -12,12 +13,16 @@ if pg:FindFirstChild("AimGui") then pg.AimGui:Destroy() end
 local gui = Instance.new("ScreenGui", pg)
 gui.Name = "AimGui"
 gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
 
 local fov = Instance.new("Frame", gui)
 fov.BackgroundTransparency = 1
 fov.Size = UDim2.new(0, cfg.Fov * 2, 0, cfg.Fov * 2)
 fov.Position = UDim2.new(0.5, -cfg.Fov, 0.5, -cfg.Fov)
 Instance.new("UICorner", fov).CornerRadius = UDim.new(1,0)
+local fovStroke = Instance.new("UIStroke", fov)
+fovStroke.Color = Color3.fromRGB(255,0,0)
+fovStroke.Thickness = 2
 
 local menu = Instance.new("Frame", gui)
 menu.Size = UDim2.new(0, 380, 0, 300)
@@ -84,7 +89,9 @@ local function mkNav(txt, x, pName)
     b.Text = txt
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
     b.MouseButton1Click:Connect(function()
-        for _, btn in pairs(navs) do btn.BackgroundColor3 = btn end
+        for _, navBtn in pairs(navs) do
+            navBtn.BackgroundColor3 = btn
+        end
         b.BackgroundColor3 = act
         switch(pName)
     end)
@@ -92,6 +99,7 @@ local function mkNav(txt, x, pName)
 end
 mkNav("🎯", 10, "Aim"); mkNav("👁️", 70, "ESP"); mkNav("⚙️", 130, "Settings")
 
+-- СТРАНИЦА AIM
 local aimB = Instance.new("TextButton", pages.Aim)
 aimB.Size = UDim2.new(0, 175, 0, 32)
 aimB.Position = UDim2.new(0, 10, 0, 10)
@@ -173,6 +181,7 @@ for i, m in ipairs(modes) do
 end
 tgtB.MouseButton1Click:Connect(function() drop.Visible = not drop.Visible end)
 
+-- СТРАНИЦА ESP
 local espB = Instance.new("TextButton", pages.ESP)
 espB.Size = UDim2.new(0, 175, 0, 32)
 espB.Position = UDim2.new(0, 10, 0, 10)
@@ -184,6 +193,7 @@ espB.Text = "ESP: OFF"
 Instance.new("UICorner", espB).CornerRadius = UDim.new(0, 6)
 espB.MouseButton1Click:Connect(function() cfg.Esp = not cfg.Esp; espB.Text = "ESP: " .. (cfg.Esp and "ON" or "OFF") end)
 
+-- СТРАНИЦА НАСТРОЕК
 local szB = Instance.new("TextButton", pages.Settings)
 szB.Size = UDim2.new(0, 175, 0, 32)
 szB.Position = UDim2.new(0, 10, 0, 10)
@@ -334,7 +344,7 @@ Players.PlayerAdded:Connect(setupP)
 for _, p in ipairs(Players:GetPlayers()) do setupP(p) end
 
 local function isVis(part)
-    if not cfg.Kill then return true end -- простой обход
+    if not cfg.Kill then return true end
     local rp = RaycastParams.new()
     rp.FilterType = Enum.RaycastFilterType.Exclude
     rp.FilterDescendantsInstances = {LocalPlayer.Character, part.Parent}
