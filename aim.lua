@@ -4,7 +4,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
-_G.cfg = { Aim = false, Fov = 150, Bind = false, Esp = false, Kill = true, TargetPolice = false, TargetCriminals = false, TargetInmates = false, Speed = 27, InfJump = false, JumpBind = false, EspNames = false }
+_G.cfg = { Aim = false, Fov = 150, Bind = false, Esp = false, Kill = true, TargetPolice = false, TargetCriminals = false, TargetInmates = false, Speed = 27, InfJump = false, JumpBind = false, EspNames = false, AutoPunch = false, InfAmmo = false }
 local cfg = _G.cfg
 local bg, btn, act = Color3.fromRGB(20,45,70), Color3.fromRGB(45,85,115), Color3.fromRGB(80,150,190)
 
@@ -198,6 +198,7 @@ mkTargetOpt("Criminals", "TargetCriminals", 30)
 mkTargetOpt("Inmates", "TargetInmates", 60)
 tgtB.MouseButton1Click:Connect(function() drop.Visible = not drop.Visible end)
 
+-- СТРАНИЦА ESP (Auto Punch и Inf Ammo)
 local espB = Instance.new("TextButton", pages.ESP)
 espB.Size = UDim2.new(0, 175, 0, 32)
 espB.Position = UDim2.new(0, 10, 0, 10)
@@ -220,6 +221,29 @@ nickVisibleB.Text = "Nick Visible: OFF"
 Instance.new("UICorner", nickVisibleB).CornerRadius = UDim.new(0, 6)
 nickVisibleB.MouseButton1Click:Connect(function() cfg.EspNames = not cfg.EspNames; nickVisibleB.Text = "Nick Visible: " .. (cfg.EspNames and "ON" or "OFF") end)
 
+local autoPunchB = Instance.new("TextButton", pages.ESP)
+autoPunchB.Size = UDim2.new(0, 175, 0, 32)
+autoPunchB.Position = UDim2.new(0, 10, 0, 90)
+autoPunchB.BackgroundColor3 = btn
+autoPunchB.TextColor3 = Color3.new(1,1,1)
+autoPunchB.Font = Enum.Font.Gotham
+autoPunchB.TextSize = 13
+autoPunchB.Text = "Auto Punch: OFF"
+Instance.new("UICorner", autoPunchB).CornerRadius = UDim.new(0, 6)
+autoPunchB.MouseButton1Click:Connect(function() cfg.AutoPunch = not cfg.AutoPunch; autoPunchB.Text = "Auto Punch: " .. (cfg.AutoPunch and "ON" or "OFF") end)
+
+local infAmmoB = Instance.new("TextButton", pages.ESP)
+infAmmoB.Size = UDim2.new(0, 175, 0, 32)
+infAmmoB.Position = UDim2.new(0, 10, 0, 130)
+infAmmoB.BackgroundColor3 = btn
+infAmmoB.TextColor3 = Color3.new(1,1,1)
+infAmmoB.Font = Enum.Font.Gotham
+infAmmoB.TextSize = 13
+infAmmoB.Text = "Inf Ammo: OFF"
+Instance.new("UICorner", infAmmoB).CornerRadius = UDim.new(0, 6)
+infAmmoB.MouseButton1Click:Connect(function() cfg.InfAmmo = not cfg.InfAmmo; infAmmoB.Text = "Inf Ammo: " .. (cfg.InfAmmo and "ON" or "OFF") end)
+
+-- СТРАНИЦА НАСТРОЕК
 local szB = Instance.new("TextButton", pages.Settings)
 szB.Size = UDim2.new(0, 175, 0, 32)
 szB.Position = UDim2.new(0, 10, 0, 10)
@@ -284,7 +308,6 @@ spdInp.Text = tostring(cfg.Speed)
 spdInp.PlaceholderText = "16-30"
 Instance.new("UICorner", spdInp).CornerRadius = UDim.new(0, 6)
 
--- Исправленная функция скорости
 local function applySpd(v)
     v = math.clamp(tonumber(v) or 16, 16, 30)
     cfg.Speed = v
@@ -294,9 +317,7 @@ local function applySpd(v)
         char.Humanoid.WalkSpeed = v
     end
 end
-spdInp.FocusLost:Connect(function()
-    applySpd(spdInp.Text)
-end)
+spdInp.FocusLost:Connect(function() applySpd(spdInp.Text) end)
 
 local fBind = Instance.new("TextButton", gui)
 fBind.Size = UDim2.new(0, 90, 0, 45)
@@ -354,36 +375,3 @@ local function mkDrag(f, t)
     f.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then d, s, p = true, i.Position, t.Position end end)
     f.InputChanged:Connect(function(i) if d and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then local df = i.Position - s; t.Position = UDim2.new(p.X.Scale, p.X.Offset + df.X, p.Y.Scale, p.Y.Offset + df.Y) end end)
     f.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then d = false end end)
-end
-mkDrag(title, menu); mkDrag(fBind, fBind); mkDrag(jBind, jBind); mkDrag(open, open)
-
-local pal = {Color3.fromRGB(0,200,255), Color3.fromRGB(0,100,255), Color3.fromRGB(0,50,150), Color3.fromRGB(0,150,255), Color3.fromRGB(20,80,200)}
-local ci, ct = 1, 0
-RunService.RenderStepped:Connect(function(dt)
-    local ni = ci % #pal + 1
-    ct = ct + dt * 0.8
-    if ct >= 1 then ct = 0; ci = ni end
-    local fc = pal[ci]:Lerp(pal[ni], ct)
-    ms.Color = fc; os.Color = fc; fovFill.BackgroundColor3 = fc
-    local pulse = (math.sin(tick() * 2) + 1) / 2
-    local activeColor = fc:Lerp(Color3.new(1,1,1), 0.3 * pulse)
-    if cfg.Aim then aimB.BackgroundColor3 = activeColor else aimB.BackgroundColor3 = btn end
-    if cfg.Kill then killB.BackgroundColor3 = activeColor else killB.BackgroundColor3 = btn end
-    if cfg.Esp then espB.BackgroundColor3 = activeColor else espB.BackgroundColor3 = btn end
-    if cfg.Bind then bindB.BackgroundColor3 = activeColor else bindB.BackgroundColor3 = btn end
-    if cfg.InfJump then infJumpBtn.BackgroundColor3 = activeColor else infJumpBtn.BackgroundColor3 = btn end
-    if cfg.JumpBind then jumpBindBtn.BackgroundColor3 = activeColor else jumpBindBtn.BackgroundColor3 = btn end
-    if cfg.EspNames then nickVisibleB.BackgroundColor3 = activeColor else nickVisibleB.BackgroundColor3 = btn end
-end)
-
-navs[1].BackgroundColor3 = act
-switch("Aim")
-
--- ЗАГРУЗКА ДВИЖКА
-task.wait(0.2)
-local engineUrl = "https://raw.githubusercontent.com/dolmotinecc300-lang/script2/refs/heads/main/engine.lua"
-local success, code = pcall(function() return game:HttpGet(engineUrl) end)
-if success and code then
-    local func = loadstring(code)
-    if func then pcall(func) end
-end
