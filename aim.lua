@@ -47,10 +47,10 @@ stroke.Thickness = 2
 stroke.Parent = fov
 fov.Visible = config.FOVEnabled
 
--- Меню
+-- Основное меню
 local menu = Instance.new("Frame")
 menu.Name = "Menu"
-menu.Size = UDim2.new(0, 380, 0, 240)
+menu.Size = UDim2.new(0, 380, 0, 260)
 menu.Position = UDim2.new(0, 20, 0, 60)
 menu.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 menu.Parent = gui
@@ -112,11 +112,41 @@ openBtn.MouseButton1Click:Connect(function()
     openBtn.Visible = false
 end)
 
--- Функция создания кнопки-иконки
-local function makeIconButton(text, x, y, getter, setter)
+-- Панели вкладок
+local pages = {}
+local currentPage = nil
+
+local function createPage(name)
+    local page = Instance.new("Frame")
+    page.Name = name
+    page.Size = UDim2.new(1, 0, 1, -80)
+    page.Position = UDim2.new(0, 0, 0, 80)
+    page.BackgroundTransparency = 1
+    page.Parent = menu
+    page.Visible = false
+    pages[name] = page
+    return page
+end
+
+local aimPage = createPage("Aim")
+local espPage = createPage("ESP")
+local settingsPage = createPage("Settings")
+
+local function switchPage(name)
+    if currentPage then
+        pages[currentPage].Visible = false
+    end
+    currentPage = name
+    pages[name].Visible = true
+end
+
+-- Кнопки навигации (Стикеры)
+local navButtons = {}
+
+local function makeNavButton(text, x, pageName)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0, 50, 0, 50)
-    btn.Position = UDim2.new(0, x, 0, y)
+    btn.Position = UDim2.new(0, x, 0, 30)
     btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.Gotham
@@ -127,39 +157,174 @@ local function makeIconButton(text, x, y, getter, setter)
     bc.CornerRadius = UDim.new(0, 8)
     bc.Parent = btn
     
-    -- Подсветка если активно
-    local function updateColor()
-        if getter() then
-            btn.BackgroundColor3 = Color3.fromRGB(80, 200, 80)
-        else
-            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-        end
-    end
-    updateColor()
-    
     btn.MouseButton1Click:Connect(function()
-        setter(not getter())
-        updateColor()
+        for _, b in pairs(navButtons) do
+            b.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        end
+        btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+        switchPage(pageName)
     end)
+    table.insert(navButtons, btn)
     return btn
 end
 
--- Верхний ряд иконок
-makeIconButton("🎯", 10, 40, function() return config.AimEnabled end, function(v) config.AimEnabled = v end)
-makeIconButton("👁️", 70, 40, function() return config.ESPEnabled end, function(v) config.ESPEnabled = v end)
-makeIconButton("⚙️", 130, 40, function() return false end, function(v) end) -- Заглушка, пока без настроек
+makeNavButton("🎯", 10, "Aim")
+makeNavButton("👁️", 70, "ESP")
+makeNavButton("⚙️", 130, "Settings")
 
--- Функция создания тумблера
-local function makeToggle(name, x, y, getter, setter)
+-- ================= СТРАНИЦА АИМ =================
+-- Кнопка включения аима
+local aimToggleBtn = Instance.new("TextButton")
+aimToggleBtn.Size = UDim2.new(0, 175, 0, 32)
+aimToggleBtn.Position = UDim2.new(0, 10, 0, 10)
+aimToggleBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+aimToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimToggleBtn.Font = Enum.Font.Gotham
+aimToggleBtn.TextSize = 13
+aimToggleBtn.Text = "Aim: OFF"
+aimToggleBtn.Parent = aimPage
+local atbc = Instance.new("UICorner")
+atbc.CornerRadius = UDim.new(0, 6)
+atbc.Parent = aimToggleBtn
+
+aimToggleBtn.MouseButton1Click:Connect(function()
+    config.AimEnabled = not config.AimEnabled
+    aimToggleBtn.Text = "Aim: " .. (config.AimEnabled and "ON" or "OFF")
+end)
+
+-- Ползунок FOV
+local fovSliderBg = Instance.new("Frame")
+fovSliderBg.Size = UDim2.new(0, 350, 0, 10)
+fovSliderBg.Position = UDim2.new(0, 10, 0, 60)
+fovSliderBg.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+fovSliderBg.Parent = aimPage
+local fsbc = Instance.new("UICorner")
+fsbc.CornerRadius = UDim.new(1, 0)
+fsbc.Parent = fovSliderBg
+
+local fovSliderFill = Instance.new("Frame")
+fovSliderFill.Size = UDim2.new(config.FOVRadius / 360, 0, 1, 0)
+fovSliderFill.BackgroundColor3 = Color3.fromRGB(80, 200, 80)
+fovSliderFill.Parent = fovSliderBg
+local fsfc = Instance.new("UICorner")
+fsfc.CornerRadius = UDim.new(1, 0)
+fsfc.Parent = fovSliderFill
+
+local fovSliderText = Instance.new("TextLabel")
+fovSliderText.Size = UDim2.new(1, 0, 0, 20)
+fovSliderText.Position = UDim2.new(0, 0, 0, -22)
+fovSliderText.BackgroundTransparency = 1
+fovSliderText.Text = "FOV: " .. config.FOVRadius
+fovSliderText.TextColor3 = Color3.fromRGB(255, 255, 255)
+fovSliderText.Font = Enum.Font.Gotham
+fovSliderText.TextSize = 13
+fovSliderText.Parent = fovSliderBg
+
+local isDraggingFov = false
+local function updateFovSlider(input)
+    local relX = math.clamp(input.Position.X - fovSliderBg.AbsolutePosition.X, 0, fovSliderBg.AbsoluteSize.X)
+    local value = math.floor((relX / fovSliderBg.AbsoluteSize.X) * 360)
+    config.FOVRadius = value
+    fovSliderFill.Size = UDim2.new(value / 360, 0, 1, 0)
+    fovSliderText.Text = "FOV: " .. value
+    fov.Size = UDim2.new(0, value * 2, 0, value * 2)
+    fov.Position = UDim2.new(0.5, -value, 0.5, -value)
+end
+
+fovSliderBg.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDraggingFov = true
+        updateFovSlider(input)
+    end
+end)
+RunService.RenderStepped:Connect(function()
+    if isDraggingFov then
+        local mouse = game.Players.LocalPlayer:GetMouse()
+        updateFovSlider({Position = Vector2.new(mouse.X, mouse.Y)})
+    end
+end)
+fovSliderBg.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDraggingFov = false
+    end
+end)
+
+-- ================= СТРАНИЦА ESP =================
+-- Кнопка включения ESP
+local espToggleBtn = Instance.new("TextButton")
+espToggleBtn.Size = UDim2.new(0, 175, 0, 32)
+espToggleBtn.Position = UDim2.new(0, 10, 0, 10)
+espToggleBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+espToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+espToggleBtn.Font = Enum.Font.Gotham
+espToggleBtn.TextSize = 13
+espToggleBtn.Text = "ESP: OFF"
+espToggleBtn.Parent = espPage
+local etbc = Instance.new("UICorner")
+etbc.CornerRadius = UDim.new(0, 6)
+etbc.Parent = espToggleBtn
+
+espToggleBtn.MouseButton1Click:Connect(function()
+    config.ESPEnabled = not config.ESPEnabled
+    espToggleBtn.Text = "ESP: " .. (config.ESPEnabled and "ON" or "OFF")
+end)
+
+-- Выбор цели (модальное окно)
+local targetBtn = Instance.new("TextButton")
+targetBtn.Size = UDim2.new(0, 175, 0, 32)
+targetBtn.Position = UDim2.new(0, 10, 0, 50)
+targetBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+targetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+targetBtn.Font = Enum.Font.Gotham
+targetBtn.TextSize = 13
+targetBtn.Text = "Target: " .. config.TargetMode
+targetBtn.Parent = espPage
+local tbc = Instance.new("UICorner")
+tbc.CornerRadius = UDim.new(0, 6)
+tbc.Parent = targetBtn
+
+local targetDropdown = Instance.new("Frame")
+targetDropdown.Size = UDim2.new(0, 175, 0, 130)
+targetDropdown.Position = UDim2.new(0, 10, 0, 86)
+targetDropdown.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+targetDropdown.Parent = espPage
+targetDropdown.Visible = false
+local tdc = Instance.new("UICorner")
+tdc.CornerRadius = UDim.new(0, 6)
+tdc.Parent = targetDropdown
+
+for i, mode in ipairs(targetModes) do
+    local opt = Instance.new("TextButton")
+    opt.Size = UDim2.new(1, 0, 0, 30)
+    opt.Position = UDim2.new(0, 0, 0, (i-1)*30)
+    opt.BackgroundTransparency = 1
+    opt.Text = mode
+    opt.TextColor3 = Color3.fromRGB(255, 255, 255)
+    opt.Font = Enum.Font.Gotham
+    opt.TextSize = 13
+    opt.Parent = targetDropdown
+    opt.MouseButton1Click:Connect(function()
+        config.TargetMode = mode
+        targetBtn.Text = "Target: " .. mode
+        targetDropdown.Visible = false
+    end)
+end
+
+targetBtn.MouseButton1Click:Connect(function()
+    targetDropdown.Visible = not targetDropdown.Visible
+end)
+
+-- ================= СТРАНИЦА НАСТРОЕК =================
+local function makeSettingToggle(name, y, getter, setter)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0, 175, 0, 32)
-    btn.Position = UDim2.new(0, x, 0, y)
+    btn.Position = UDim2.new(0, 10, 0, y)
     btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.Gotham
     btn.TextSize = 13
     btn.Text = name .. ": " .. (getter() and "ON" or "OFF")
-    btn.Parent = menu
+    btn.Parent = settingsPage
     local bc = Instance.new("UICorner")
     bc.CornerRadius = UDim.new(0, 6)
     bc.Parent = btn
@@ -170,50 +335,19 @@ local function makeToggle(name, x, y, getter, setter)
     return btn
 end
 
--- Тумблеры (левый столбец)
-makeToggle("FOV", 10, 100, function() return config.FOVEnabled end, function(v) config.FOVEnabled = v; fov.Visible = v end)
-makeToggle("Visible Check", 10, 136, function() return config.VisibleCheck end, function(v) config.VisibleCheck = v end)
+makeSettingToggle("Visible Check", 10, function() return config.VisibleCheck end, function(v) config.VisibleCheck = v end)
+makeSettingToggle("Team Check", 50, function() return config.TeamCheck end, function(v) config.TeamCheck = v end)
 
--- Правый столбец
-makeToggle("Team Check", 195, 100, function() return config.TeamCheck end, function(v) config.TeamCheck = v end)
-
--- Выбор цели
-local targetBtn = Instance.new("TextButton")
-targetBtn.Size = UDim2.new(0, 175, 0, 32)
-targetBtn.Position = UDim2.new(0, 195, 0, 136)
-targetBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-targetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-targetBtn.Font = Enum.Font.Gotham
-targetBtn.TextSize = 13
-targetBtn.Text = "Target: " .. config.TargetMode
-targetBtn.Parent = menu
-local tbc = Instance.new("UICorner")
-tbc.CornerRadius = UDim.new(0, 6)
-tbc.Parent = targetBtn
-
-targetBtn.MouseButton1Click:Connect(function()
-    local currentIndex = 1
-    for i, mode in ipairs(targetModes) do
-        if mode == config.TargetMode then
-            currentIndex = i
-            break
-        end
-    end
-    currentIndex = currentIndex % #targetModes + 1
-    config.TargetMode = targetModes[currentIndex]
-    targetBtn.Text = "Target: " .. config.TargetMode
-end)
-
--- Бинд
+-- Кнопка бинда
 local bindBtn = Instance.new("TextButton")
 bindBtn.Size = UDim2.new(0, 175, 0, 32)
-bindBtn.Position = UDim2.new(0, 10, 0, 172)
+bindBtn.Position = UDim2.new(0, 10, 0, 90)
 bindBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 bindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 bindBtn.Font = Enum.Font.Gotham
 bindBtn.TextSize = 13
 bindBtn.Text = "Aim Bind: OFF"
-bindBtn.Parent = menu
+bindBtn.Parent = settingsPage
 local bbc = Instance.new("UICorner")
 bbc.CornerRadius = UDim.new(0, 6)
 bbc.Parent = bindBtn
@@ -256,54 +390,7 @@ floatBind.MouseButton1Click:Connect(function()
     floatBind.BackgroundColor3 = config.AimEnabled and Color3.fromRGB(40, 200, 40) or Color3.fromRGB(200, 40, 40)
 end)
 
--- Цвет и радиус
-local colorBtn = Instance.new("TextButton")
-colorBtn.Size = UDim2.new(0, 175, 0, 32)
-colorBtn.Position = UDim2.new(0, 195, 0, 172)
-colorBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-colorBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-colorBtn.Font = Enum.Font.Gotham
-colorBtn.TextSize = 13
-colorBtn.Text = "FOV Color"
-colorBtn.Parent = menu
-local cbc = Instance.new("UICorner")
-cbc.CornerRadius = UDim.new(0, 6)
-cbc.Parent = colorBtn
-
-local colors = {
-    Color3.fromRGB(255, 0, 0),
-    Color3.fromRGB(0, 255, 0),
-    Color3.fromRGB(0, 150, 255),
-    Color3.fromRGB(255, 255, 0),
-    Color3.fromRGB(255, 0, 255),
-}
-local colorIndex = 1
-colorBtn.MouseButton1Click:Connect(function()
-    colorIndex = colorIndex % #colors + 1
-    config.FOVColor = colors[colorIndex]
-    stroke.Color = config.FOVColor
-end)
-
-local radiusSlider = Instance.new("TextButton")
-radiusSlider.Size = UDim2.new(1, -20, 0, 32)
-radiusSlider.Position = UDim2.new(0, 10, 0, 208)
-radiusSlider.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-radiusSlider.TextColor3 = Color3.fromRGB(255, 255, 255)
-radiusSlider.Font = Enum.Font.Gotham
-radiusSlider.TextSize = 13
-radiusSlider.Text = "FOV Radius: " .. config.FOVRadius
-radiusSlider.Parent = menu
-local rbc = Instance.new("UICorner")
-rbc.CornerRadius = UDim.new(0, 6)
-rbc.Parent = radiusSlider
-radiusSlider.MouseButton1Click:Connect(function()
-    config.FOVRadius = config.FOVRadius + 25
-    if config.FOVRadius > 300 then config.FOVRadius = 75 end
-    fov.Size = UDim2.new(0, config.FOVRadius * 2, 0, config.FOVRadius * 2)
-    fov.Position = UDim2.new(0.5, -config.FOVRadius, 0.5, -config.FOVRadius)
-    radiusSlider.Text = "FOV Radius: " .. config.FOVRadius
-end)
-
+-- Перетаскивание
 local function makeDraggable(frame, target)
     local dragging = false
     local dragStart, startPos
@@ -473,3 +560,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
+-- Включаем стартовую вкладку
+navButtons[1].BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+switchPage("Aim")
