@@ -50,12 +50,12 @@ fov.Visible = config.FOVEnabled
 -- Меню
 local menu = Instance.new("Frame")
 menu.Name = "Menu"
-menu.Size = UDim2.new(0, 260, 0, 420) -- Длинный квадрат
+menu.Size = UDim2.new(0, 380, 0, 240)
 menu.Position = UDim2.new(0, 20, 0, 60)
 menu.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 menu.Parent = gui
 local mcorner = Instance.new("UICorner")
-mcorner.CornerRadius = UDim.new(0, 14) -- Закругления
+mcorner.CornerRadius = UDim.new(0, 14)
 mcorner.Parent = menu
 local mstroke = Instance.new("UIStroke")
 mstroke.Color = config.FOVColor
@@ -112,11 +112,48 @@ openBtn.MouseButton1Click:Connect(function()
     openBtn.Visible = false
 end)
 
--- Функция создания тумблера
-local function makeToggle(name, y, getter, setter)
+-- Функция создания кнопки-иконки
+local function makeIconButton(text, x, y, getter, setter)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -20, 0, 32)
-    btn.Position = UDim2.new(0, 10, 0, y)
+    btn.Size = UDim2.new(0, 50, 0, 50)
+    btn.Position = UDim2.new(0, x, 0, y)
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 24
+    btn.Text = text
+    btn.Parent = menu
+    local bc = Instance.new("UICorner")
+    bc.CornerRadius = UDim.new(0, 8)
+    bc.Parent = btn
+    
+    -- Подсветка если активно
+    local function updateColor()
+        if getter() then
+            btn.BackgroundColor3 = Color3.fromRGB(80, 200, 80)
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        end
+    end
+    updateColor()
+    
+    btn.MouseButton1Click:Connect(function()
+        setter(not getter())
+        updateColor()
+    end)
+    return btn
+end
+
+-- Верхний ряд иконок
+makeIconButton("🎯", 10, 40, function() return config.AimEnabled end, function(v) config.AimEnabled = v end)
+makeIconButton("👁️", 70, 40, function() return config.ESPEnabled end, function(v) config.ESPEnabled = v end)
+makeIconButton("⚙️", 130, 40, function() return false end, function(v) end) -- Заглушка, пока без настроек
+
+-- Функция создания тумблера
+local function makeToggle(name, x, y, getter, setter)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 175, 0, 32)
+    btn.Position = UDim2.new(0, x, 0, y)
     btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.Gotham
@@ -133,16 +170,17 @@ local function makeToggle(name, y, getter, setter)
     return btn
 end
 
-makeToggle("Aim", 40, function() return config.AimEnabled end, function(v) config.AimEnabled = v end)
-makeToggle("FOV", 76, function() return config.FOVEnabled end, function(v) config.FOVEnabled = v; fov.Visible = v end)
-makeToggle("ESP", 112, function() return config.ESPEnabled end, function(v) config.ESPEnabled = v end)
-makeToggle("Visible Check", 148, function() return config.VisibleCheck end, function(v) config.VisibleCheck = v end)
-makeToggle("Team Check", 184, function() return config.TeamCheck end, function(v) config.TeamCheck = v end)
+-- Тумблеры (левый столбец)
+makeToggle("FOV", 10, 100, function() return config.FOVEnabled end, function(v) config.FOVEnabled = v; fov.Visible = v end)
+makeToggle("Visible Check", 10, 136, function() return config.VisibleCheck end, function(v) config.VisibleCheck = v end)
+
+-- Правый столбец
+makeToggle("Team Check", 195, 100, function() return config.TeamCheck end, function(v) config.TeamCheck = v end)
 
 -- Выбор цели
 local targetBtn = Instance.new("TextButton")
-targetBtn.Size = UDim2.new(1, -20, 0, 32)
-targetBtn.Position = UDim2.new(0, 10, 0, 220)
+targetBtn.Size = UDim2.new(0, 175, 0, 32)
+targetBtn.Position = UDim2.new(0, 195, 0, 136)
 targetBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 targetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 targetBtn.Font = Enum.Font.Gotham
@@ -168,8 +206,8 @@ end)
 
 -- Бинд
 local bindBtn = Instance.new("TextButton")
-bindBtn.Size = UDim2.new(1, -20, 0, 32)
-bindBtn.Position = UDim2.new(0, 10, 0, 256)
+bindBtn.Size = UDim2.new(0, 175, 0, 32)
+bindBtn.Position = UDim2.new(0, 10, 0, 172)
 bindBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 bindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 bindBtn.Font = Enum.Font.Gotham
@@ -220,8 +258,8 @@ end)
 
 -- Цвет и радиус
 local colorBtn = Instance.new("TextButton")
-colorBtn.Size = UDim2.new(1, -20, 0, 32)
-colorBtn.Position = UDim2.new(0, 10, 0, 292)
+colorBtn.Size = UDim2.new(0, 175, 0, 32)
+colorBtn.Position = UDim2.new(0, 195, 0, 172)
 colorBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 colorBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 colorBtn.Font = Enum.Font.Gotham
@@ -248,7 +286,7 @@ end)
 
 local radiusSlider = Instance.new("TextButton")
 radiusSlider.Size = UDim2.new(1, -20, 0, 32)
-radiusSlider.Position = UDim2.new(0, 10, 0, 328)
+radiusSlider.Position = UDim2.new(0, 10, 0, 208)
 radiusSlider.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 radiusSlider.TextColor3 = Color3.fromRGB(255, 255, 255)
 radiusSlider.Font = Enum.Font.Gotham
@@ -293,10 +331,10 @@ makeDraggable(title, menu)
 makeDraggable(floatBind, floatBind)
 makeDraggable(openBtn, openBtn)
 
--- RGB Подсветка меню
+-- RGB Подсветка
 local hue = 0
 RunService.RenderStepped:Connect(function(dt)
-    hue = (hue + dt * 0.1) % 1 -- Медленная переливка
+    hue = (hue + dt * 0.1) % 1
     local rgbColor = Color3.fromHSV(hue, 1, 1)
     mstroke.Color = rgbColor
     obstroke.Color = rgbColor
@@ -397,7 +435,6 @@ end
 
 -- Основной цикл
 RunService.RenderStepped:Connect(function()
-    -- Аим
     if config.AimEnabled and config.AimBind then
         local best, bestDist = nil, config.FOVRadius
         local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
@@ -424,7 +461,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Управление хайлайтами
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then
             local highlight = player.Character:FindFirstChild("ESP_Highlight")
