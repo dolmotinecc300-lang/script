@@ -4,8 +4,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- Передаем конфиг и GUI в глобальную таблицу, чтобы engine.lua их увидел
-_G.cfg = { Aim = false, Fov = 150, Bind = false, Esp = false, Kill = true, TargetPolice = false, TargetCriminals = false, TargetInmates = false, Speed = 16, InfJump = false, JumpBind = false, EspNames = false }
+_G.cfg = { Aim = false, Fov = 150, Bind = false, Esp = false, Kill = true, TargetPolice = false, TargetCriminals = false, TargetInmates = false, Speed = 27, InfJump = false, JumpBind = false, EspNames = false }
 local cfg = _G.cfg
 local bg, btn, act = Color3.fromRGB(20,45,70), Color3.fromRGB(45,85,115), Color3.fromRGB(80,150,190)
 
@@ -16,6 +15,15 @@ gui.Name = "AimGui"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 _G.Gui = gui
+
+local fov = Instance.new("Frame", gui)
+fov.BackgroundTransparency = 1
+fov.Size = UDim2.new(0, cfg.Fov * 2, 0, cfg.Fov * 2)
+fov.Position = UDim2.new(0.5, -cfg.Fov, 0.5, -cfg.Fov)
+Instance.new("UICorner", fov).CornerRadius = UDim.new(1,0)
+local fovStroke = Instance.new("UIStroke", fov)
+fovStroke.Color = Color3.fromRGB(255,0,0)
+fovStroke.Thickness = 2
 
 local menu = Instance.new("Frame", gui)
 menu.Size = UDim2.new(0, 380, 0, 300)
@@ -123,6 +131,8 @@ local function updFov(inp)
     cfg.Fov = v
     fovFill.Size = UDim2.new(v/360, 0, 1, 0)
     fovKnob.Position = UDim2.new(v/360, -10, 0.5, -10)
+    fov.Size = UDim2.new(0, v*2, 0, v*2)
+    fov.Position = UDim2.new(0.5, -v, 0.5, -v)
 end
 fovBg.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then dragF = true; updFov(i) end end)
 UserInputService.InputChanged:Connect(function(i) if dragF and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then updFov(i) end end)
@@ -274,12 +284,19 @@ spdInp.Text = tostring(cfg.Speed)
 spdInp.PlaceholderText = "16-30"
 Instance.new("UICorner", spdInp).CornerRadius = UDim.new(0, 6)
 
+-- Исправленная функция скорости
 local function applySpd(v)
     v = math.clamp(tonumber(v) or 16, 16, 30)
     cfg.Speed = v
     spdInp.Text = tostring(v)
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.WalkSpeed = v
+    end
 end
-spdInp.FocusLost:Connect(function() applySpd(spdInp.Text) end)
+spdInp.FocusLost:Connect(function()
+    applySpd(spdInp.Text)
+end)
 
 local fBind = Instance.new("TextButton", gui)
 fBind.Size = UDim2.new(0, 90, 0, 45)
