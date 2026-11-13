@@ -20,6 +20,7 @@ local function getGui()
     local sg = Instance.new("ScreenGui")
     sg.Name = "MobileAimGui"
     sg.ResetOnSpawn = false
+    sg.IgnoreGuiInset = true
     sg.Parent = pg
     return sg
 end
@@ -57,6 +58,7 @@ mstroke.Color = config.FOVColor
 mstroke.Thickness = 2
 mstroke.Parent = menu
 
+-- Заголовок меню (за него таскаем)
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -40, 0, 30)
 title.BackgroundTransparency = 1
@@ -66,7 +68,7 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 16
 title.Parent = menu
 
--- Кнопка закрытия
+-- Кнопка закрытия (Крестик)
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
 closeBtn.Position = UDim2.new(1, -35, 0, 0)
@@ -75,20 +77,21 @@ closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 18
+closeBtn.ZIndex = 5
 closeBtn.Parent = menu
 
--- Кнопка открытия (появляется когда меню закрыто)
+-- Круглая кнопка открытия (А)
 local openBtn = Instance.new("TextButton")
-openBtn.Size = UDim2.new(0, 50, 0, 50)
+openBtn.Size = UDim2.new(0, 45, 0, 45)
 openBtn.Position = UDim2.new(0, 20, 0, 60)
 openBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-openBtn.Text = "M"
+openBtn.Text = "A"
 openBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 openBtn.Font = Enum.Font.GothamBold
 openBtn.TextSize = 20
 openBtn.Parent = gui
 local obc = Instance.new("UICorner")
-obc.CornerRadius = UDim.new(0, 10)
+obc.CornerRadius = UDim.new(1, 0)
 obc.Parent = openBtn
 local obstroke = Instance.new("UIStroke")
 obstroke.Color = config.FOVColor
@@ -130,7 +133,6 @@ makeToggle("Aim", 40, function() return config.AimEnabled end, function(v) confi
 makeToggle("FOV", 80, function() return config.FOVEnabled end, function(v) config.FOVEnabled = v; fov.Visible = v end)
 makeToggle("ESP", 120, function() return config.ESPEnabled end, function(v) config.ESPEnabled = v end)
 
--- Кнопка бинда в меню
 local bindBtn = Instance.new("TextButton")
 bindBtn.Size = UDim2.new(1, -20, 0, 34)
 bindBtn.Position = UDim2.new(0, 10, 0, 160)
@@ -144,7 +146,7 @@ local bbc = Instance.new("UICorner")
 bbc.CornerRadius = UDim.new(0, 6)
 bbc.Parent = bindBtn
 
--- Сама летающая кнопка бинда
+-- Плавающая кнопка бинда
 local floatBind = Instance.new("TextButton")
 floatBind.Size = UDim2.new(0, 90, 0, 45)
 floatBind.Position = UDim2.new(0.5, 60, 0.85, 0)
@@ -233,29 +235,40 @@ radiusSlider.MouseButton1Click:Connect(function()
     radiusSlider.Text = "FOV Radius: " .. config.FOVRadius
 end)
 
--- Перетаскивание
+-- Функция перетаскивания (с блокировкой экрана)
 local function makeDraggable(frame, target)
     local dragging = false
     local dragInput, dragStart, startPos
+    
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
             startPos = target.Position
+            -- Блокируем движение камеры, пока таскаем
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
         end
     end)
+    
     frame.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
             local delta = input.Position - dragStart
             target.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
+    
     frame.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
 end
+
+-- Таскаем только за заголовок и за сами кнопки
 makeDraggable(title, menu)
 makeDraggable(floatBind, floatBind)
 makeDraggable(openBtn, openBtn)
@@ -275,13 +288,12 @@ local function getTeamColor(player)
         local n = team.Name:lower()
         if n:find("guard") or n:find("cop") or n:find("police") then
             return Color3.fromRGB(0, 100, 255) -- Полиция - Синий
-        elseif n:find("criminal") or n:find("inmate") == nil then
+        elseif n:find("criminal") or n:find("prisoner") then
             return Color3.fromRGB(255, 0, 0) -- Преступники - Красный
-        elseif n:find("inmate") or n:find("prisoner") then
+        elseif n:find("inmate") or n:find("prison") then
             return Color3.fromRGB(0, 255, 0) -- Заключенные - Зеленый
         end
     end
-    -- Фоллбек если команды не распознались по названию
     if player.TeamColor then
         if player.TeamColor == BrickColor.new("Really blue") then return Color3.fromRGB(0, 100, 255) end
         if player.TeamColor == BrickColor.new("Really red") then return Color3.fromRGB(255, 0, 0) end
