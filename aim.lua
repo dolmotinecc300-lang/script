@@ -6,21 +6,16 @@ local Camera = workspace.CurrentCamera
 
 local config = {
     AimEnabled = false,
-    FOVEnabled = true,
     FOVRadius = 150,
-    FOVColor = Color3.fromRGB(255, 0, 0),
     AimBind = false,
     ESPEnabled = false,
     VisibleCheck = true,
     TeamCheck = true,
     TargetMode = "All",
-    MenuSize = 1.0,
 }
 
 local targetModes = {"All", "Police", "Criminals", "Inmates"}
-
--- Цвета
-local bgColor = Color3.fromRGB(20, 35, 50) -- Темно-голубой
+local bgColor = Color3.fromRGB(20, 35, 50)
 local btnColor = Color3.fromRGB(30, 50, 70)
 local btnActiveColor = Color3.fromRGB(50, 80, 110)
 
@@ -38,60 +33,34 @@ end
 
 local gui = getGui()
 
--- Блокировка кликов по меню (чтобы камера не крутилась)
-local function blockInput(frame)
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            -- Блокируем прохождение клика в игру
-        end
-    end)
-end
-
--- FOV
 local fov = Instance.new("Frame")
-fov.Name = "FOV"
 fov.BackgroundTransparency = 1
 fov.Size = UDim2.new(0, config.FOVRadius * 2, 0, config.FOVRadius * 2)
 fov.Position = UDim2.new(0.5, -config.FOVRadius, 0.5, -config.FOVRadius)
 fov.Parent = gui
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(1, 0)
-corner.Parent = fov
-local stroke = Instance.new("UIStroke")
-stroke.Color = config.FOVColor
+Instance.new("UICorner", fov).CornerRadius = UDim.new(1, 0)
+local stroke = Instance.new("UIStroke", fov)
+stroke.Color = Color3.fromRGB(255, 0, 0)
 stroke.Thickness = 2
-stroke.Parent = fov
-fov.Visible = config.FOVEnabled
-blockInput(fov)
 
--- Основное меню
 local menu = Instance.new("Frame")
-menu.Name = "Menu"
 menu.Size = UDim2.new(0, 380, 0, 260)
 menu.Position = UDim2.new(0, 20, 0, 60)
 menu.BackgroundColor3 = bgColor
 menu.Parent = gui
-local mcorner = Instance.new("UICorner")
-mcorner.CornerRadius = UDim.new(0, 14)
-mcorner.Parent = menu
-local mstroke = Instance.new("UIStroke")
-mstroke.Color = config.FOVColor
+Instance.new("UICorner", menu).CornerRadius = UDim.new(0, 14)
+local mstroke = Instance.new("UIStroke", menu)
 mstroke.Thickness = 2
-mstroke.Parent = menu
-blockInput(menu)
 
--- Заголовок
-local title = Instance.new("TextLabel")
+local title = Instance.new("TextLabel", menu)
 title.Size = UDim2.new(1, -40, 0, 35)
 title.BackgroundTransparency = 1
 title.Text = "Aim Menu"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
-title.Parent = menu
 
--- Крестик
-local closeBtn = Instance.new("TextButton")
+local closeBtn = Instance.new("TextButton", menu)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
 closeBtn.Position = UDim2.new(1, -35, 0, 2)
 closeBtn.BackgroundTransparency = 1
@@ -99,54 +68,33 @@ closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 18
-closeBtn.ZIndex = 5
-closeBtn.Parent = menu
-blockInput(closeBtn)
 
-local openBtn = Instance.new("TextButton")
+local openBtn = Instance.new("TextButton", gui)
 openBtn.Size = UDim2.new(0, 45, 0, 45)
 openBtn.Position = UDim2.new(0, 20, 0, 60)
 openBtn.BackgroundColor3 = bgColor
 openBtn.Text = "A"
-openBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+openBtn.TextColor3 = Color3.new(1,1,1)
 openBtn.Font = Enum.Font.GothamBold
 openBtn.TextSize = 20
-openBtn.Parent = gui
-local obc = Instance.new("UICorner")
-obc.CornerRadius = UDim.new(1, 0)
-obc.Parent = openBtn
-local obstroke = Instance.new("UIStroke")
-obstroke.Color = config.FOVColor
+Instance.new("UICorner", openBtn).CornerRadius = UDim.new(1, 0)
+local obstroke = Instance.new("UIStroke", openBtn)
 obstroke.Thickness = 2
-obstroke.Parent = openBtn
 openBtn.Visible = false
-blockInput(openBtn)
 
-closeBtn.MouseButton1Click:Connect(function()
-    menu.Visible = false
-    openBtn.Visible = true
-end)
+closeBtn.MouseButton1Click:Connect(function() menu.Visible = false; openBtn.Visible = true end)
+openBtn.MouseButton1Click:Connect(function() menu.Visible = true; openBtn.Visible = false end)
 
-openBtn.MouseButton1Click:Connect(function()
-    menu.Visible = true
-    openBtn.Visible = false
-end)
-
--- Панели вкладок
 local pages = {}
 local currentPage = nil
-
 local function createPage(name)
-    local page = Instance.new("Frame")
-    page.Name = name
-    page.Size = UDim2.new(1, 0, 1, -80)
-    page.Position = UDim2.new(0, 0, 0, 80)
-    page.BackgroundTransparency = 1
-    page.Parent = menu
-    page.Visible = false
-    pages[name] = page
-    blockInput(page)
-    return page
+    local p = Instance.new("Frame", menu)
+    p.Size = UDim2.new(1, 0, 1, -80)
+    p.Position = UDim2.new(0, 0, 0, 80)
+    p.BackgroundTransparency = 1
+    p.Visible = false
+    pages[name] = p
+    return p
 end
 
 local aimPage = createPage("Aim")
@@ -154,450 +102,313 @@ local espPage = createPage("ESP")
 local settingsPage = createPage("Settings")
 
 local function switchPage(name)
-    if currentPage then
-        pages[currentPage].Visible = false
-    end
+    if currentPage then pages[currentPage].Visible = false end
     currentPage = name
     pages[name].Visible = true
 end
 
--- Кнопки навигации
 local navButtons = {}
-
 local function makeNavButton(text, x, pageName)
-    local btn = Instance.new("TextButton")
+    local btn = Instance.new("TextButton", menu)
     btn.Size = UDim2.new(0, 50, 0, 50)
     btn.Position = UDim2.new(0, x, 0, 30)
     btn.BackgroundColor3 = btnColor
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextColor3 = Color3.new(1,1,1)
     btn.Font = Enum.Font.Gotham
     btn.TextSize = 24
     btn.Text = text
-    btn.Parent = menu
-    local bc = Instance.new("UICorner")
-    bc.CornerRadius = UDim.new(0, 8)
-    bc.Parent = btn
-    blockInput(btn)
-    
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     btn.MouseButton1Click:Connect(function()
-        for _, b in pairs(navButtons) do
-            b.BackgroundColor3 = btnColor
-        end
+        for _, b in pairs(navButtons) do b.BackgroundColor3 = btnColor end
         btn.BackgroundColor3 = btnActiveColor
         switchPage(pageName)
     end)
     table.insert(navButtons, btn)
-    return btn
 end
 
 makeNavButton("🎯", 10, "Aim")
 makeNavButton("👁️", 70, "ESP")
 makeNavButton("⚙️", 130, "Settings")
 
--- ================= СТРАНИЦА АИМ =================
--- Кнопка включения аима
-local aimToggleBtn = Instance.new("TextButton")
-aimToggleBtn.Size = UDim2.new(0, 175, 0, 32)
-aimToggleBtn.Position = UDim2.new(0, 10, 0, 10)
-aimToggleBtn.BackgroundColor3 = btnColor
-aimToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-aimToggleBtn.Font = Enum.Font.Gotham
-aimToggleBtn.TextSize = 13
-aimToggleBtn.Text = "Aim: OFF"
-aimToggleBtn.Parent = aimPage
-local atbc = Instance.new("UICorner")
-atbc.CornerRadius = UDim.new(0, 6)
-atbc.Parent = aimToggleBtn
-blockInput(aimToggleBtn)
-
-aimToggleBtn.MouseButton1Click:Connect(function()
+local aimBtn = Instance.new("TextButton", aimPage)
+aimBtn.Size = UDim2.new(0, 175, 0, 32)
+aimBtn.Position = UDim2.new(0, 10, 0, 10)
+aimBtn.BackgroundColor3 = btnColor
+aimBtn.TextColor3 = Color3.new(1,1,1)
+aimBtn.Font = Enum.Font.Gotham
+aimBtn.TextSize = 13
+aimBtn.Text = "Aim: OFF"
+Instance.new("UICorner", aimBtn).CornerRadius = UDim.new(0, 6)
+aimBtn.MouseButton1Click:Connect(function()
     config.AimEnabled = not config.AimEnabled
-    aimToggleBtn.Text = "Aim: " .. (config.AimEnabled and "ON" or "OFF")
+    aimBtn.Text = "Aim: " .. (config.AimEnabled and "ON" or "OFF")
 end)
 
--- Ползунок FOV
-local fovContainer = Instance.new("Frame")
-fovContainer.Size = UDim2.new(0, 350, 0, 40)
-fovContainer.Position = UDim2.new(0, 10, 0, 55)
-fovContainer.BackgroundTransparency = 1
-fovContainer.Parent = aimPage
-blockInput(fovContainer)
+local fovBg = Instance.new("Frame", aimPage)
+fovBg.Size = UDim2.new(0, 350, 0, 10)
+fovBg.Position = UDim2.new(0, 10, 0, 65)
+fovBg.BackgroundColor3 = Color3.fromRGB(40, 60, 80)
+Instance.new("UICorner", fovBg).CornerRadius = UDim.new(1, 0)
 
-local fovSliderBg = Instance.new("Frame")
-fovSliderBg.Size = UDim2.new(1, 0, 0, 10)
-fovSliderBg.Position = UDim2.new(0, 0, 0, 20)
-fovSliderBg.BackgroundColor3 = Color3.fromRGB(40, 60, 80)
-fovSliderBg.Parent = fovContainer
-local fsbc = Instance.new("UICorner")
-fsbc.CornerRadius = UDim.new(1, 0)
-fsbc.Parent = fovSliderBg
+local fovFill = Instance.new("Frame", fovBg)
+fovFill.Size = UDim2.new(config.FOVRadius / 360, 0, 1, 0)
+fovFill.BackgroundColor3 = btnActiveColor
+Instance.new("UICorner", fovFill).CornerRadius = UDim.new(1, 0)
 
-local fovSliderFill = Instance.new("Frame")
-fovSliderFill.Size = UDim2.new(config.FOVRadius / 360, 0, 1, 0)
-fovSliderFill.BackgroundColor3 = btnActiveColor
-fovSliderFill.Parent = fovSliderBg
-local fsfc = Instance.new("UICorner")
-fsfc.CornerRadius = UDim.new(1, 0)
-fsfc.Parent = fovSliderFill
-
-local fovKnob = Instance.new("Frame")
+local fovKnob = Instance.new("Frame", fovBg)
 fovKnob.Size = UDim2.new(0, 20, 0, 20)
 fovKnob.Position = UDim2.new(config.FOVRadius / 360, -10, 0.5, -10)
-fovKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-fovKnob.Parent = fovSliderBg
-local fkc = Instance.new("UICorner")
-fkc.CornerRadius = UDim.new(1, 0)
-fkc.Parent = fovKnob
+fovKnob.BackgroundColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", fovKnob).CornerRadius = UDim.new(1, 0)
 
-local fovSliderText = Instance.new("TextLabel")
-fovSliderText.Size = UDim2.new(1, 0, 0, 20)
-fovSliderText.BackgroundTransparency = 1
-fovSliderText.Text = "FOV: " .. config.FOVRadius
-fovSliderText.TextColor3 = Color3.fromRGB(255, 255, 255)
-fovSliderText.Font = Enum.Font.Gotham
-fovSliderText.TextSize = 13
-fovSliderText.Parent = fovSliderBg.Parent
-blockInput(fovSliderText)
-
-local isDraggingFov = false
-local function updateFovSlider(input)
-    local relX = math.clamp(input.Position.X - fovSliderBg.AbsolutePosition.X, 0, fovSliderBg.AbsoluteSize.X)
-    local value = math.floor((relX / fovSliderBg.AbsoluteSize.X) * 360)
-    config.FOVRadius = value
-    fovSliderFill.Size = UDim2.new(value / 360, 0, 1, 0)
-    fovKnob.Position = UDim2.new(value / 360, -10, 0.5, -10)
-    fovSliderText.Text = "FOV: " .. value
-    fov.Size = UDim2.new(0, value * 2, 0, value * 2)
-    fov.Position = UDim2.new(0.5, -value, 0.5, -value)
+local isDragging = false
+local function updateSlider(input)
+    local relX = math.clamp(input.Position.X - fovBg.AbsolutePosition.X, 0, fovBg.AbsoluteSize.X)
+    local val = math.floor((relX / fovBg.AbsoluteSize.X) * 360)
+    config.FOVRadius = val
+    fovFill.Size = UDim2.new(val / 360, 0, 1, 0)
+    fovKnob.Position = UDim2.new(val / 360, -10, 0.5, -10)
+    fov.Size = UDim2.new(0, val * 2, 0, val * 2)
+    fov.Position = UDim2.new(0.5, -val, 0.5, -val)
 end
 
-fovSliderBg.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDraggingFov = true
-        updateFovSlider(input)
+fovBg.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = true; updateSlider(i)
     end
 end)
-UserInputService.InputChanged:Connect(function(input)
-    if isDraggingFov and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
-        updateFovSlider(input)
+UserInputService.InputChanged:Connect(function(i)
+    if isDragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
+        updateSlider(i)
     end
 end)
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDraggingFov = false
+UserInputService.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
     end
 end)
 
--- Кнопка Team Check
-local teamCheckBtn = Instance.new("TextButton")
-teamCheckBtn.Size = UDim2.new(0, 175, 0, 32)
-teamCheckBtn.Position = UDim2.new(0, 10, 0, 110)
-teamCheckBtn.BackgroundColor3 = btnColor
-teamCheckBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-teamCheckBtn.Font = Enum.Font.Gotham
-teamCheckBtn.TextSize = 13
-teamCheckBtn.Text = "Team Check: " .. (config.TeamCheck and "ON" or "OFF")
-teamCheckBtn.Parent = aimPage
-local tcbc = Instance.new("UICorner")
-tcbc.CornerRadius = UDim.new(0, 6)
-tcbc.Parent = teamCheckBtn
-blockInput(teamCheckBtn)
-
-teamCheckBtn.MouseButton1Click:Connect(function()
+local teamBtn = Instance.new("TextButton", aimPage)
+teamBtn.Size = UDim2.new(0, 175, 0, 32)
+teamBtn.Position = UDim2.new(0, 10, 0, 110)
+teamBtn.BackgroundColor3 = btnColor
+teamBtn.TextColor3 = Color3.new(1,1,1)
+teamBtn.Font = Enum.Font.Gotham
+teamBtn.TextSize = 13
+teamBtn.Text = "Team Check: ON"
+Instance.new("UICorner", teamBtn).CornerRadius = UDim.new(0, 6)
+teamBtn.MouseButton1Click:Connect(function()
     config.TeamCheck = not config.TeamCheck
-    teamCheckBtn.Text = "Team Check: " .. (config.TeamCheck and "ON" or "OFF")
+    teamBtn.Text = "Team Check: " .. (config.TeamCheck and "ON" or "OFF")
 end)
 
--- Кнопка Target
-local targetBtn = Instance.new("TextButton")
+local targetBtn = Instance.new("TextButton", aimPage)
 targetBtn.Size = UDim2.new(0, 175, 0, 32)
 targetBtn.Position = UDim2.new(0, 195, 0, 110)
 targetBtn.BackgroundColor3 = btnColor
-targetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+targetBtn.TextColor3 = Color3.new(1,1,1)
 targetBtn.Font = Enum.Font.Gotham
 targetBtn.TextSize = 13
-targetBtn.Text = "Target: " .. config.TargetMode
-targetBtn.Parent = aimPage
-local tbc = Instance.new("UICorner")
-tbc.CornerRadius = UDim.new(0, 6)
-tbc.Parent = targetBtn
-blockInput(targetBtn)
+targetBtn.Text = "Target: All"
+Instance.new("UICorner", targetBtn).CornerRadius = UDim.new(0, 6)
 
-local targetDropdown = Instance.new("Frame")
-targetDropdown.Size = UDim2.new(0, 175, 0, 130)
-targetDropdown.Position = UDim2.new(0, 195, 0, 146)
-targetDropdown.BackgroundColor3 = bgColor
-targetDropdown.Parent = aimPage
-targetDropdown.Visible = false
-local tdc = Instance.new("UICorner")
-tdc.CornerRadius = UDim.new(0, 6)
-tdc.Parent = targetDropdown
-blockInput(targetDropdown)
+local dropdown = Instance.new("Frame", aimPage)
+dropdown.Size = UDim2.new(0, 175, 0, 120)
+dropdown.Position = UDim2.new(0, 195, 0, 146)
+dropdown.BackgroundColor3 = bgColor
+dropdown.Visible = false
+Instance.new("UICorner", dropdown).CornerRadius = UDim.new(0, 6)
 
 for i, mode in ipairs(targetModes) do
-    local opt = Instance.new("TextButton")
+    local opt = Instance.new("TextButton", dropdown)
     opt.Size = UDim2.new(1, 0, 0, 30)
     opt.Position = UDim2.new(0, 0, 0, (i-1)*30)
     opt.BackgroundTransparency = 1
     opt.Text = mode
-    opt.TextColor3 = Color3.fromRGB(255, 255, 255)
+    opt.TextColor3 = Color3.new(1,1,1)
     opt.Font = Enum.Font.Gotham
     opt.TextSize = 13
-    opt.Parent = targetDropdown
-    blockInput(opt)
     opt.MouseButton1Click:Connect(function()
         config.TargetMode = mode
         targetBtn.Text = "Target: " .. mode
-        targetDropdown.Visible = false
+        dropdown.Visible = false
     end)
 end
+targetBtn.MouseButton1Click:Connect(function() dropdown.Visible = not dropdown.Visible end)
 
-targetBtn.MouseButton1Click:Connect(function()
-    targetDropdown.Visible = not targetDropdown.Visible
-end)
-
--- ================= СТРАНИЦА ESP =================
-local espToggleBtn = Instance.new("TextButton")
-espToggleBtn.Size = UDim2.new(0, 175, 0, 32)
-espToggleBtn.Position = UDim2.new(0, 10, 0, 10)
-espToggleBtn.BackgroundColor3 = btnColor
-espToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-espToggleBtn.Font = Enum.Font.Gotham
-espToggleBtn.TextSize = 13
-espToggleBtn.Text = "ESP: OFF"
-espToggleBtn.Parent = espPage
-local etbc = Instance.new("UICorner")
-etbc.CornerRadius = UDim.new(0, 6)
-etbc.Parent = espToggleBtn
-blockInput(espToggleBtn)
-
-espToggleBtn.MouseButton1Click:Connect(function()
+local espBtn = Instance.new("TextButton", espPage)
+espBtn.Size = UDim2.new(0, 175, 0, 32)
+espBtn.Position = UDim2.new(0, 10, 0, 10)
+espBtn.BackgroundColor3 = btnColor
+espBtn.TextColor3 = Color3.new(1,1,1)
+espBtn.Font = Enum.Font.Gotham
+espBtn.TextSize = 13
+espBtn.Text = "ESP: OFF"
+Instance.new("UICorner", espBtn).CornerRadius = UDim.new(0, 6)
+espBtn.MouseButton1Click:Connect(function()
     config.ESPEnabled = not config.ESPEnabled
-    espToggleBtn.Text = "ESP: " .. (config.ESPEnabled and "ON" or "OFF")
+    espBtn.Text = "ESP: " .. (config.ESPEnabled and "ON" or "OFF")
 end)
 
--- ================= СТРАНИЦА НАСТРОЕК =================
--- Настройка размера меню
-local sizeBtn = Instance.new("TextButton")
+local sizeBtn = Instance.new("TextButton", settingsPage)
 sizeBtn.Size = UDim2.new(0, 175, 0, 32)
 sizeBtn.Position = UDim2.new(0, 10, 0, 10)
 sizeBtn.BackgroundColor3 = btnColor
-sizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+sizeBtn.TextColor3 = Color3.new(1,1,1)
 sizeBtn.Font = Enum.Font.Gotham
 sizeBtn.TextSize = 13
 sizeBtn.Text = "Menu Size: 1.0"
-sizeBtn.Parent = settingsPage
-local sbc = Instance.new("UICorner")
-sbc.CornerRadius = UDim.new(0, 6)
-sbc.Parent = sizeBtn
-blockInput(sizeBtn)
-
-local menuSizes = {1.0, 0.8, 1.2, 1.5}
-local menuSizeIndex = 1
+Instance.new("UICorner", sizeBtn).CornerRadius = UDim.new(0, 6)
+local sizes = {1.0, 0.8, 1.2, 1.5}
+local sizeIdx = 1
 sizeBtn.MouseButton1Click:Connect(function()
-    menuSizeIndex = menuSizeIndex % #menuSizes + 1
-    local newSize = menuSizes[menuSizeIndex]
-    config.MenuSize = newSize
-    sizeBtn.Text = "Menu Size: " .. newSize
-    menu.Size = UDim2.new(0, 380 * newSize, 0, 260 * newSize)
+    sizeIdx = sizeIdx % #sizes + 1
+    local ns = sizes[sizeIdx]
+    menu.Size = UDim2.new(0, 380 * ns, 0, 260 * ns)
+    sizeBtn.Text = "Menu Size: " .. ns
 end)
 
--- Кнопка бинда
-local bindBtn = Instance.new("TextButton")
+local bindBtn = Instance.new("TextButton", settingsPage)
 bindBtn.Size = UDim2.new(0, 175, 0, 32)
 bindBtn.Position = UDim2.new(0, 10, 0, 50)
 bindBtn.BackgroundColor3 = btnColor
-bindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+bindBtn.TextColor3 = Color3.new(1,1,1)
 bindBtn.Font = Enum.Font.Gotham
 bindBtn.TextSize = 13
 bindBtn.Text = "Aim Bind: OFF"
-bindBtn.Parent = settingsPage
-local bbc = Instance.new("UICorner")
-bbc.CornerRadius = UDim.new(0, 6)
-bbc.Parent = bindBtn
-blockInput(bindBtn)
+Instance.new("UICorner", bindBtn).CornerRadius = UDim.new(0, 6)
 
-local floatBind = Instance.new("TextButton")
+local floatBind = Instance.new("TextButton", gui)
 floatBind.Size = UDim2.new(0, 90, 0, 45)
 floatBind.Position = UDim2.new(0.5, 60, 0.85, 0)
 floatBind.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-floatBind.TextColor3 = Color3.fromRGB(255, 255, 255)
+floatBind.TextColor3 = Color3.new(1,1,1)
 floatBind.Font = Enum.Font.GothamBold
 floatBind.TextSize = 16
 floatBind.Text = "AIM OFF"
-floatBind.Parent = gui
 floatBind.Visible = false
-local fbc = Instance.new("UICorner")
-fbc.CornerRadius = UDim.new(0, 10)
-fbc.Parent = floatBind
-blockInput(floatBind)
-
-local function updateBindUI()
-    if config.AimBind then
-        bindBtn.Text = "Aim Bind: ON"
-        floatBind.Visible = true
-    else
-        bindBtn.Text = "Aim Bind: OFF"
-        floatBind.Visible = false
-        config.AimEnabled = false
-        floatBind.Text = "AIM OFF"
-        floatBind.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-    end
-end
+Instance.new("UICorner", floatBind).CornerRadius = UDim.new(0, 10)
 
 bindBtn.MouseButton1Click:Connect(function()
     config.AimBind = not config.AimBind
-    updateBindUI()
+    bindBtn.Text = "Aim Bind: " .. (config.AimBind and "ON" or "OFF")
+    floatBind.Visible = config.AimBind
 end)
-
 floatBind.MouseButton1Click:Connect(function()
     config.AimEnabled = not config.AimEnabled
     floatBind.Text = config.AimEnabled and "AIM ON" or "AIM OFF"
     floatBind.BackgroundColor3 = config.AimEnabled and Color3.fromRGB(40, 200, 40) or Color3.fromRGB(200, 40, 40)
 end)
 
--- Перетаскивание
 local function makeDraggable(frame, target)
-    local dragging = false
-    local dragStart, startPos
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = target.Position
+    local dragging, dragStart, startPos = false, nil, nil
+    frame.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging, dragStart, startPos = true, i.Position, target.Position
         end
     end)
-    frame.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
-            local delta = input.Position - dragStart
-            target.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    frame.InputChanged:Connect(function(i)
+        if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
+            local d = i.Position - dragStart
+            target.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
         end
     end)
-    frame.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
+    frame.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
 end
-
 makeDraggable(title, menu)
 makeDraggable(floatBind, floatBind)
 makeDraggable(openBtn, openBtn)
 
--- RGB Подсветка
 local hue = 0
 RunService.RenderStepped:Connect(function(dt)
     hue = (hue + dt * 0.1) % 1
-    local rgbColor = Color3.fromHSV(hue, 1, 1)
-    mstroke.Color = rgbColor
-    obstroke.Color = rgbColor
+    local c = Color3.fromHSV(hue, 1, 1)
+    mstroke.Color = c
+    obstroke.Color = c
 end)
 
--- ESP Логика
-local espCache = {}
+local function getColor(p)
+    local n = (p.Team and p.Team.Name:lower()) or ""
+    if n:find("guard") or n:find("cop") or n:find("police") then return Color3.fromRGB(0, 100, 255) end
+    if n:find("criminal") or n:find("prisoner") then return Color3.fromRGB(255, 0, 0) end
+    if n:find("inmate") or n:find("prison") then return Color3.fromRGB(0, 255, 0) end
+    if p.TeamColor == BrickColor.new("Really blue") then return Color3.fromRGB(0, 100, 255) end
+    if p.TeamColor == BrickColor.new("Really red") then return Color3.fromRGB(255, 0, 0) end
+    if p.TeamColor == BrickColor.new("Bright green") then return Color3.fromRGB(0, 255, 0) end
+    return Color3.new(1,1,1)
+end
 
-local function getTeamColor(player)
-    local char = player.Character
-    if not char then return Color3.new(1,1,1) end
-    local team = player.Team
-    if team then
-        local n = team.Name:lower()
-        if n:find("guard") or n:find("cop") or n:find("police") then
-            return Color3.fromRGB(0, 100, 255)
-        elseif n:find("criminal") or n:find("prisoner") then
-            return Color3.fromRGB(255, 0, 0)
-        elseif n:find("inmate") or n:find("prison") then
-            return Color3.fromRGB(0, 255, 0)
-        end
+local function setupPlayer(p)
+    if p == LocalPlayer then return end
+    local function apply()
+        if not p.Character then return end
+        local old = p.Character:FindFirstChild("ESP_Highlight")
+        if old then old:Destroy() end
+        local h = Instance.new("Highlight", p.Character)
+        h.Name = "ESP_Highlight"
+        h.FillColor = getColor(p)
+        h.OutlineColor = Color3.new(1,1,1)
+        h.FillTransparency = 0.3
+        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        h.Enabled = config.ESPEnabled
     end
-    if player.TeamColor then
-        if player.TeamColor == BrickColor.new("Really blue") then return Color3.fromRGB(0, 100, 255) end
-        if player.TeamColor == BrickColor.new("Really red") then return Color3.fromRGB(255, 0, 0) end
-        if player.TeamColor == BrickColor.new("Bright green") then return Color3.fromRGB(0, 255, 0) end
-    end
-    return Color3.new(1, 1, 1)
+    p.CharacterAdded:Connect(function() task.wait(1); apply() end)
+    if p.Character then apply() end
 end
-
-local function isSameTeam(player)
-    if not config.TeamCheck then return false end
-    return player.Team == LocalPlayer.Team
-end
-
-local function checkTargetMode(player)
-    if config.TargetMode == "All" then return true end
-    local teamName = (player.Team and player.Team.Name:lower()) or ""
-    if config.TargetMode == "Police" then
-        return teamName:find("guard") or teamName:find("cop") or teamName:find("police")
-    elseif config.TargetMode == "Criminals" then
-        return teamName:find("criminal") or teamName:find("prisoner")
-    elseif config.TargetMode == "Inmates" then
-        return teamName:find("inmate") or teamName:find("prison")
-    end
-    return false
-end
-
-local function applyChams(player)
-    local char = player.Character
-    if not char or player == LocalPlayer then return end
-    local oldHighlight = char:FindFirstChild("ESP_Highlight")
-    if oldHighlight then oldHighlight:Destroy() end
-    local highlight = Instance.new("Highlight")
-    highlight.Name = "ESP_Highlight"
-    highlight.FillColor = getTeamColor(player)
-    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-    highlight.FillTransparency = 0.3
-    highlight.OutlineTransparency = 0
-    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    highlight.Enabled = config.ESPEnabled
-    highlight.Parent = char
-end
-
-local function removeChams(player)
-    if player.Character then
-        local h = player.Character:FindFirstChild("ESP_Highlight")
-        if h then h:Destroy() end
-    end
-end
-
-local function setupPlayer(player)
-    if player == LocalPlayer then return end
-    player.CharacterAdded:Connect(function()
-        task.wait(1)
-        applyChams(player)
-    end)
-    if player.Character then
-        applyChams(player)
-    end
-end
-
 Players.PlayerAdded:Connect(setupPlayer)
-Players.PlayerRemoving:Connect(removeChams)
 for _, p in ipairs(Players:GetPlayers()) do setupPlayer(p) end
 
--- Проверка видимости
-local function isVisible(targetPart)
+local function isVisible(part)
     if not config.VisibleCheck then return true end
-    local rayParams = RaycastParams.new()
-    rayParams.FilterType = Enum.RaycastFilterType.Exclude
-    rayParams.FilterDescendantsInstances = {LocalPlayer.Character, targetPart.Parent}
-    local origin = Camera.CFrame.Position
-    local direction = (targetPart.Position - origin)
-    local result = workspace:Raycast(origin, direction, rayParams)
-    return result == nil
+    local rp = RaycastParams.new()
+    rp.FilterType = Enum.RaycastFilterType.Exclude
+    rp.FilterDescendantsInstances = {LocalPlayer.Character, part.Parent}
+    local res = workspace:Raycast(Camera.CFrame.Position, part.Position - Camera.CFrame.Position, rp)
+    return res == nil
 end
 
--- Основной цикл
 RunService.RenderStepped:Connect(function()
     if config.AimEnabled and config.AimBind then
         local best, bestDist = nil, config.FOVRadius
-        local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+        local c = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
-                local hrp = p.Character:FindFirstChild("HumanoidRootPart")
                 local head = p.Character:FindFirstChild("Head")
                 local hum = p.Character:FindFirstChild("Humanoid")
-                
-                if hrp and head and hum and hum.Health > 0 and not isSameTeam(p) and checkTargetMode(p) then
-                    local screen, onScreen = Camera.WorldToViewportPoint(head.Position)
-                    if onScreen then
-                        local dist = (Vector2.ne
+                if head and hum and hum.Health > 0 then
+                    if config.TeamCheck and p.Team == LocalPlayer.Team then continue end
+                    local n = (p.Team and p.Team.Name:lower()) or ""
+                    local valid = false
+                    if config.TargetMode == "All" then valid = true
+                    elseif config.TargetMode == "Police" and (n:find("guard") or n:find("cop") or n:find("police")) then valid = true
+                    elseif config.TargetMode == "Criminals" and (n:find("criminal") or n:find("prisoner")) then valid = true
+                    elseif config.TargetMode == "Inmates" and (n:find("inmate") or n:find("prison")) then valid = true end
+                    
+                    if valid then
+                        local sp, on = Camera:WorldToViewportPoint(head.Position)
+                        if on then
+                            local d = (Vector2.new(sp.X, sp.Y) - c).Magnitude
+                            if d < bestDist and isVisible(head) then bestDist = d; best = head end
+                        end
+                    end
+                end
+            end
+        end
+        if best then Camera.CFrame = CFrame.new(Camera.CFrame.Position, best.Position) end
+    end
+
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            local h = p.Character:FindFirstChild("ESP_Highlight")
+            if h then
+                h.Enabled = config.ESPEnabled
+                if config.ESPEnabled then h.FillColor = getColor(p) end
+            end
+        end
+    end
+end)
+
+navButtons[1].BackgroundColor3 = btnActiveColor
+switchPage("Aim")
